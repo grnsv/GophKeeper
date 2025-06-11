@@ -6,107 +6,118 @@ GophKeeper is a client-server application that allows users to securely store lo
 
 ## Architecture Overview
 
-* **Communication protocol:** gRPC
-* **Authentication:** JWT tokens (HS256)
-* **Server storage:** PostgreSQL
-* **Client storage:** BoltDB (local cache)
-* **Encryption:** End-to-end AES-256-GCM with Argon2id key derivation
-* **Key storage:** OS-native keychain systems
+- **Communication:** HTTP(S)
+- **Authentication:** JWT (HS256)
+- **Server Storage:** PostgreSQL
+- **Client Storage:** BoltDB (local cache)
+- **Security:**
+  - End-to-end AES-256-GCM encryption
+  - Client-side Argon2id key derivation
+  - Irrecoverable master password (no reset mechanism)                          |
 
 ---
 
-## Client usage
+## Client Application
 
-The client is a CLI application supporting Windows, Linux, and macOS. Application configuration is stored in the user's home directory with OS-specific paths:
+The client is a command-line interface (CLI) application built with BubbleTea TUI, compatible with Windows, Linux, and macOS. Configuration is stored in the user's home directory with OS-specific paths:
 
-* Linux/macOS: `~/.config/goph-keeper-client/config.json`
-* Windows: `%APPDATA%\goph-keeper-client\config.json`
+- **Linux/macOS:** `~/.config/goph-keeper-client/config.json`
+- **Windows:** `%APPDATA%\goph-keeper-client\config.json`
 
-CLI Commands (terminal user interface):
+Upon startup, the application checks for the configuration file. If it doesn’t exist, a new one is created with the default server address: `http://localhost:8080`.
 
-| Command                          | Description                             |
-| -------------------------------- | --------------------------------------- |
-| `goph-keeper-client version`     | Show client version and build date      |
-| `goph-keeper-client register`    | Register a new user on the server       |
-| `goph-keeper-client list`        | Retrieve and display all stored entries |
-| `goph-keeper-client put`         | Add or update an entry                  |
-| `goph-keeper-client delete {id}` | Delete an entry by its UUID             |
+**Workflow:**
+
+1. **Initial Menu:**
+   - `Login` / `Register` / `About`
+2. **Authenticated Menu:**
+   - `Show` / `Add` / `Sync` / `About`
 
 ---
 
-## Registration
+## Operations
 
-```shell
-goph-keeper-client register
-```
+### 1. Registration (`POST /register`)
 
-1. Prompt for login (email or any string) and master password (no email verification is required).
-2. Client sends registration request to server.
-3. Server verifies login uniqueness and creates user record with UUID.
-4. JWT token is generated and returned.
-5. Client saves login and UUID to the config file (for Linux it will be `~/.config/goph-keeper-client/config.json`).
-6. Derive an AES-256-GCM encryption key from the master password using Argon2id (salt = login + UUID).
-7. Store derived key and JWT in the OS keychain.
+User registers with login (any string, no email verification) and master password.
+
+**Server:**
+
+  - Verifies the uniqueness of the `login`.
+  - Creates a user record with a UUID and a password hash (using Argon2id).
+  - Generates and returns a JWT token.
+
+**Client:**
+
+  - Derives an AES-256-GCM encryption key from the master password using Argon2id (salt = login + UUID).
+  - Stores the key in memory.
 
 *Note: The master password cannot be recovered or changed. Loss results in permanent data access loss.*
 
----
+### 2. Authentication (`POST /login`)
 
-## Authentication
+**Server:** Verifies credentials against Argon2id hash
 
-For any command except `version` and `register`:
+**Client:** Identical key derivation as registration
 
-1. Client checks the OS keychain for a stored encryption key and JWT.
-2. If missing, prompt for login and master password (if login is in config, only prompt for password).
-3. Send authentication request to server.
-4. On success, derive encryption key, store key and JWT in keychain.
-5. Execute the initial command.
+### 3. Synchronization
 
----
+**Triggers:** Post-auth, every 10min (background), or manually
 
-## Synchronization
+**Process:**
 
-For any command except `version` and `register`:
+1. Check server availability via `GET /version`
+  2. Pull server records via `GET /records` → merge into local BoltDB
+  3. Push `pending` records via `PUT /records/{id}`
+  4. Update statuses (`synced`/`conflict`)
+  5. Delete `deleted` records via `DELETE /records/{id}`
+  6. Completely remove records marked `deleted` locally
+  7. Show message if has conflicts
 
-1. Client checks local BoltDB cache for existing entries.
-2. If missing, fetches all user data from server
-3. Stores encrypted data in local BoltDB cache.
+### 4. Data Management
 
----
+#### Show
 
-## Data Operations
+Displays all records stored in the local BoltDB cache. User can select a record via the TUI to:
+- View details
+- Update
+- Delete
+- Resolve conflicts (if applicable)
 
-### List Items
+#### Add/Update (`PUT /records/{id}`)
+1. Select data type:
+   - Credentials • Text • Binary • Bank card
+2. Enter data + optional JSON metadata
+3. Client:
+   - Generates UUID (for new records)
+   - Encrypts payload (AES-256-GCM)
+   - Sends to server
+4. Server stores record with a composite primary key (UUID + user ID)
+5. Conflict handling triggers resolution UI
 
-```shell
-goph-keeper-client list
-```
+#### Delete (`DELETE /records/{id}`)
 
-Displays all entries from the local BoltDB cache in JSON format.
+1. Mark `deleted` locally
+2. Send delete request
+3. Remove from cache on success
 
-### Add/Edit Items
+### 5. Conflict Resolution
+**Detection:** Version mismatch during sync/update
+**Resolution Workflow:**
+1. Visual indicators:
+   - Conflicted records are marked with `[CONFLICT]` flag in the `Show` list
+   - Detailed conflict notification appears in the TUI interface
+2. User selects conflicted record → "Resolve"
+3. Side-by-side comparison:
+   - Local version (client changes)
+   - Remote version (server state)
+4. User selects preferred version
+5. Client:
+   - Increments version number
+   - Sends update via `PUT /records/{id}`
+   - Updates status: `conflict` → `synced`
 
-```shell
-goph-keeper-client put
-```
-
-1. Prompts for data type:
-
-   * Login/password pairs
-   * Text notes
-   * Binary files
-   * Bank card details
-2. Prompts for any JSON-formatted metadata.
-3. Generates UUID for new items.
-4. Encrypt the data client-side and send to server.
-5. Saves to server with composite primary key (UUID + user ID).
-6. Updates local BoltDB cache (overwrites existing items)
-
-### Delete Items
-
-```shell
-goph-keeper-client delete {id}
-```
-
-1. Sends delete request to server for specified ID
-2. Removes item from local BoltDB cache
+### 6. System Information (`About`)
+Displays build metadata:
+- Client version/date
+- Server version/date
