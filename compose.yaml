@@ -1,0 +1,11 @@
+services:
+  goph-keeper:
+    build:
+      args:
+        VERSION: '${VERSION}'
+        DATE: '${DATE}'
+    restart: unless-stopped
+    ports:
+      - '${EXTERNAL_PORT:-8080}:${INTERNAL_PORT:-8080}'
+    environment:
+      RUN_ADDRESS: '0.0.0.0:${INTERNAL_PORT:-8080}'

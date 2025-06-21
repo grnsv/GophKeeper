@@ -1,0 +1,221 @@
+openapi: 3.1.1
+info:
+  title: GophKeeper API
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+
+paths:
+  /register:
+    post:
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCredentials'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+        '400':
+          description: Invalid request format
+        '409':
+          description: User already exists
+
+  /login:
+    post:
+      summary: Authenticate user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCredentials'
+      responses:
+        '200':
+          description: Successful authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+        '400':
+          description: Invalid request format
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /records:
+    get:
+      summary: Get all user records
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Record'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /records/{id}:
+    put:
+      summary: Create or update record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Record'
+      responses:
+        '204':
+          description: Record saved
+        '400':
+          description: Invalid format
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Version conflict
+
+    get:
+      summary: Get specific record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Record'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Record not found
+
+    delete:
+      summary: Delete record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Record deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /version:
+    get:
+      summary: Get server version
+      responses:
+        '200':
+          description: Server version information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionInfo'
+
+components:
+  schemas:
+    UserCredentials:
+      type: object
+      required:
+        - login
+        - password
+      properties:
+        login:
+          type: string
+          example: user@example.com
+        password:
+          type: string
+          example: P@ssw0rd!
+          format: password
+
+    AuthToken:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT authentication token
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    Record:
+      type: object
+      required:
+        - type
+        - data
+        - metadata
+        - version
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        type:
+          type: string
+          enum: [credentials, text, binary, card]
+        data:
+          type: string
+          format: byte
+          description: Base64 encoded encrypted data
+          example: U3VwZXIgc2VjcmV0IGJpbmFyeSBkYXRh
+        metadata:
+          type: object
+          additionalProperties: {}
+          description: Additional information (any valid json)
+        version:
+          type: integer
+          description: Data version for synchronization
+          minimum: 1
+
+    VersionInfo:
+      type: object
+      properties:
+        build_version:
+          type: string
+          example: 1.2.3
+        build_date:
+          type: string
+          format: date
+          example: 2025-05-02
+
+  responses:
+    Unauthorized:
+      description: Unauthorized
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
