@@ -1,4 +1,4 @@
-package model
+package models
 
 import (
 	"encoding/json"
@@ -19,6 +19,7 @@ type Record struct {
 	UserID   string
 	Type     string
 	Data     []byte
+	Nonce    []byte
 	Metadata json.RawMessage
 	Version  int
 }

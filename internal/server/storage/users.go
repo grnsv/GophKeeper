@@ -6,7 +6,7 @@ import (
 	"errors"
 
 	"github.com/grnsv/GophKeeper/internal/server/interfaces"
-	"github.com/grnsv/GophKeeper/internal/server/model"
+	"github.com/grnsv/GophKeeper/internal/server/models"
 )
 
 type UserRepository struct {
@@ -17,7 +17,7 @@ type UserRepository struct {
 func NewUserRepository(ctx context.Context, db *sql.DB) (interfaces.UserRepository, error) {
 	r := &UserRepository{
 		db:    db,
-		stmts: make(map[string]*sql.Stmt, 3),
+		stmts: make(map[string]*sql.Stmt, 4),
 	}
 	if err := r.initStatements(ctx); err != nil {
 		return nil, err
@@ -62,15 +62,15 @@ func (r *UserRepository) IsLoginExists(ctx context.Context, login string) (bool,
 	return exists, nil
 }
 
-func (r *UserRepository) CreateUser(ctx context.Context, user *model.User) error {
+func (r *UserRepository) CreateUser(ctx context.Context, user *models.User) error {
 	if err := r.stmts["CreateUser"].QueryRowContext(ctx, user.Login, user.PasswordHash).Scan(&user.ID); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *UserRepository) FindUserByLogin(ctx context.Context, login string) (*model.User, error) {
-	var user model.User
+func (r *UserRepository) FindUserByLogin(ctx context.Context, login string) (*models.User, error) {
+	var user models.User
 	if err := r.stmts["FindUserByLogin"].QueryRowContext(ctx, login).Scan(
 		&user.ID,
 		&user.Login,

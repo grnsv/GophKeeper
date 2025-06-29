@@ -90,7 +90,7 @@ func encodeRecordsIDDeleteResponse(response RecordsIDDeleteRes, w http.ResponseW
 
 func encodeRecordsIDGetResponse(response RecordsIDGetRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
-	case *Record:
+	case *RecordWithId:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
 		span.SetStatus(codes.Ok, http.StatusText(200))

@@ -21,11 +21,11 @@ go build -ldflags "\
     " .
 cd ../..
 
-# cd cmd/client
-# go build -ldflags "\
-#     -X 'main.buildVersion=${VERSION}' \
-#     -X 'main.buildDate=${DATE}' \
-#     ".
-# cd ../..
+cd cmd/client
+go build -ldflags "\
+    -X 'main.buildVersion=${VERSION}' \
+    -X 'main.buildDate=${DATE}' \
+    " .
+cd ../..
 
-docker compose build goph-keeper
+docker compose build gophkeeper

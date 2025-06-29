@@ -9,7 +9,7 @@ import (
 	"github.com/go-faster/jx"
 	"github.com/grnsv/GophKeeper/internal/api"
 	"github.com/grnsv/GophKeeper/internal/server/interfaces"
-	"github.com/grnsv/GophKeeper/internal/server/model"
+	"github.com/grnsv/GophKeeper/internal/server/models"
 )
 
 var ErrUserIDNotFound = errors.New("user ID not found in context")
@@ -31,7 +31,7 @@ func (h *Handler) RegisterPost(ctx context.Context, req *api.UserCredentials) (a
 		}
 		return nil, err
 	}
-	return &api.AuthToken{Token: api.NewOptString(token)}, nil
+	return &api.AuthToken{Token: token}, nil
 }
 
 func (h *Handler) LoginPost(ctx context.Context, req *api.UserCredentials) (api.LoginPostRes, error) {
@@ -42,7 +42,7 @@ func (h *Handler) LoginPost(ctx context.Context, req *api.UserCredentials) (api.
 		}
 		return nil, err
 	}
-	return &api.AuthToken{Token: api.NewOptString(token)}, nil
+	return &api.AuthToken{Token: token}, nil
 }
 
 func (h *Handler) VersionGet(ctx context.Context) (*api.VersionInfo, error) {
@@ -66,12 +66,13 @@ func (h *Handler) getUserID(ctx context.Context) (string, error) {
 	return userID, nil
 }
 
-func (h *Handler) convertRecordToApiRecord(rec *model.Record) (*api.Record, error) {
-	record := api.Record{
-		ID:       api.NewOptUUID(rec.ID),
-		Type:     api.RecordType(rec.Type),
+func (h *Handler) convertRecordToApiRecord(rec *models.Record) (*api.RecordWithId, error) {
+	record := api.RecordWithId{
+		ID:       rec.ID,
+		Type:     api.RecordWithIdType(rec.Type),
 		Data:     rec.Data,
-		Metadata: make(api.RecordMetadata),
+		Nonce:    rec.Nonce,
+		Metadata: make(api.RecordWithIdMetadata),
 		Version:  rec.Version,
 	}
 	var metadata map[string]json.RawMessage
@@ -112,11 +113,12 @@ func (h *Handler) RecordsIDPut(ctx context.Context, req *api.Record, params api.
 	if err != nil {
 		return nil, err
 	}
-	rec := &model.Record{
+	rec := &models.Record{
 		ID:      params.ID,
 		UserID:  userID,
 		Type:    string(req.Type),
 		Data:    req.Data,
+		Nonce:   req.Nonce,
 		Version: req.Version,
 	}
 	if req.Metadata != nil {

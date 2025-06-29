@@ -142,7 +142,7 @@ func decodeRecordsIDGetResponse(resp *http.Response) (res RecordsIDGetRes, _ err
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response Record
+			var response RecordWithId
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err

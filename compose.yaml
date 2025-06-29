@@ -1,5 +1,5 @@
 services:
-  goph-keeper:
+  gophkeeper:
     build:
       args:
         VERSION: '${VERSION}'

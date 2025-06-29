@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/grnsv/GophKeeper/internal/server/model"
+	"github.com/grnsv/GophKeeper/internal/server/models"
 )
 
 var (
@@ -19,9 +19,9 @@ var (
 type Service interface {
 	Register(ctx context.Context, login, password string) (token string, err error)
 	Login(ctx context.Context, login, password string) (token string, err error)
-	GetRecords(ctx context.Context, userID string) ([]*model.Record, error)
-	SaveRecord(ctx context.Context, rec *model.Record) error
-	GetRecord(ctx context.Context, userID string, id uuid.UUID) (*model.Record, error)
+	GetRecords(ctx context.Context, userID string) ([]*models.Record, error)
+	SaveRecord(ctx context.Context, rec *models.Record) error
+	GetRecord(ctx context.Context, userID string, id uuid.UUID) (*models.Record, error)
 	DeleteRecord(ctx context.Context, userID string, id uuid.UUID) error
 	GetVersion(ctx context.Context) (buildVersion string, buildDate time.Time)
 }
@@ -39,15 +39,15 @@ type Storage interface {
 type UserRepository interface {
 	Close() error
 	IsLoginExists(ctx context.Context, login string) (bool, error)
-	CreateUser(ctx context.Context, user *model.User) error
-	FindUserByLogin(ctx context.Context, login string) (*model.User, error)
+	CreateUser(ctx context.Context, user *models.User) error
+	FindUserByLogin(ctx context.Context, login string) (*models.User, error)
 }
 
 type RecordRepository interface {
 	Close() error
-	GetRecords(ctx context.Context, userID string) ([]*model.Record, error)
-	CreateRecord(ctx context.Context, rec *model.Record) error
-	UpdateRecord(ctx context.Context, rec *model.Record) error
-	GetRecord(ctx context.Context, userID string, id uuid.UUID) (*model.Record, error)
+	GetRecords(ctx context.Context, userID string) ([]*models.Record, error)
+	CreateRecord(ctx context.Context, rec *models.Record) error
+	UpdateRecord(ctx context.Context, rec *models.Record) error
+	GetRecord(ctx context.Context, userID string, id uuid.UUID) (*models.Record, error)
 	DeleteRecord(ctx context.Context, userID string, id uuid.UUID) error
 }

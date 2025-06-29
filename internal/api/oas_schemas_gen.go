@@ -13,16 +13,16 @@ import (
 // Ref: #/components/schemas/AuthToken
 type AuthToken struct {
 	// JWT authentication token.
-	Token OptString `json:"token"`
+	Token string `json:"token"`
 }
 
 // GetToken returns the value of Token.
-func (s *AuthToken) GetToken() OptString {
+func (s *AuthToken) GetToken() string {
 	return s.Token
 }
 
 // SetToken sets the value of Token.
-func (s *AuthToken) SetToken(val OptString) {
+func (s *AuthToken) SetToken(val string) {
 	s.Token = val
 }
 
@@ -203,6 +203,8 @@ type Record struct {
 	Type RecordType `json:"type"`
 	// Base64 encoded encrypted data.
 	Data []byte `json:"data"`
+	// Base64 encoded nonce used for encryption.
+	Nonce []byte `json:"nonce"`
 	// Additional information (any valid json).
 	Metadata RecordMetadata `json:"metadata"`
 	// Data version for synchronization.
@@ -222,6 +224,11 @@ func (s *Record) GetType() RecordType {
 // GetData returns the value of Data.
 func (s *Record) GetData() []byte {
 	return s.Data
+}
+
+// GetNonce returns the value of Nonce.
+func (s *Record) GetNonce() []byte {
+	return s.Nonce
 }
 
 // GetMetadata returns the value of Metadata.
@@ -249,6 +256,11 @@ func (s *Record) SetData(val []byte) {
 	s.Data = val
 }
 
+// SetNonce sets the value of Nonce.
+func (s *Record) SetNonce(val []byte) {
+	s.Nonce = val
+}
+
 // SetMetadata sets the value of Metadata.
 func (s *Record) SetMetadata(val RecordMetadata) {
 	s.Metadata = val
@@ -258,8 +270,6 @@ func (s *Record) SetMetadata(val RecordMetadata) {
 func (s *Record) SetVersion(val int) {
 	s.Version = val
 }
-
-func (*Record) recordsIDGetRes() {}
 
 // Additional information (any valid json).
 type RecordMetadata map[string]jx.Raw
@@ -328,7 +338,151 @@ func (s *RecordType) UnmarshalText(data []byte) error {
 	}
 }
 
-type RecordsGetOKApplicationJSON []Record
+// Merged schema.
+// Ref: #/components/schemas/RecordWithId
+type RecordWithId struct {
+	ID   uuid.UUID        `json:"id"`
+	Type RecordWithIdType `json:"type"`
+	// Base64 encoded encrypted data.
+	Data []byte `json:"data"`
+	// Base64 encoded nonce used for encryption.
+	Nonce []byte `json:"nonce"`
+	// Additional information (any valid json).
+	Metadata RecordWithIdMetadata `json:"metadata"`
+	// Data version for synchronization.
+	Version int `json:"version"`
+}
+
+// GetID returns the value of ID.
+func (s *RecordWithId) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *RecordWithId) GetType() RecordWithIdType {
+	return s.Type
+}
+
+// GetData returns the value of Data.
+func (s *RecordWithId) GetData() []byte {
+	return s.Data
+}
+
+// GetNonce returns the value of Nonce.
+func (s *RecordWithId) GetNonce() []byte {
+	return s.Nonce
+}
+
+// GetMetadata returns the value of Metadata.
+func (s *RecordWithId) GetMetadata() RecordWithIdMetadata {
+	return s.Metadata
+}
+
+// GetVersion returns the value of Version.
+func (s *RecordWithId) GetVersion() int {
+	return s.Version
+}
+
+// SetID sets the value of ID.
+func (s *RecordWithId) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *RecordWithId) SetType(val RecordWithIdType) {
+	s.Type = val
+}
+
+// SetData sets the value of Data.
+func (s *RecordWithId) SetData(val []byte) {
+	s.Data = val
+}
+
+// SetNonce sets the value of Nonce.
+func (s *RecordWithId) SetNonce(val []byte) {
+	s.Nonce = val
+}
+
+// SetMetadata sets the value of Metadata.
+func (s *RecordWithId) SetMetadata(val RecordWithIdMetadata) {
+	s.Metadata = val
+}
+
+// SetVersion sets the value of Version.
+func (s *RecordWithId) SetVersion(val int) {
+	s.Version = val
+}
+
+func (*RecordWithId) recordsIDGetRes() {}
+
+// Additional information (any valid json).
+type RecordWithIdMetadata map[string]jx.Raw
+
+func (s *RecordWithIdMetadata) init() RecordWithIdMetadata {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+type RecordWithIdType string
+
+const (
+	RecordWithIdTypeCredentials RecordWithIdType = "credentials"
+	RecordWithIdTypeText        RecordWithIdType = "text"
+	RecordWithIdTypeBinary      RecordWithIdType = "binary"
+	RecordWithIdTypeCard        RecordWithIdType = "card"
+)
+
+// AllValues returns all RecordWithIdType values.
+func (RecordWithIdType) AllValues() []RecordWithIdType {
+	return []RecordWithIdType{
+		RecordWithIdTypeCredentials,
+		RecordWithIdTypeText,
+		RecordWithIdTypeBinary,
+		RecordWithIdTypeCard,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s RecordWithIdType) MarshalText() ([]byte, error) {
+	switch s {
+	case RecordWithIdTypeCredentials:
+		return []byte(s), nil
+	case RecordWithIdTypeText:
+		return []byte(s), nil
+	case RecordWithIdTypeBinary:
+		return []byte(s), nil
+	case RecordWithIdTypeCard:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *RecordWithIdType) UnmarshalText(data []byte) error {
+	switch RecordWithIdType(data) {
+	case RecordWithIdTypeCredentials:
+		*s = RecordWithIdTypeCredentials
+		return nil
+	case RecordWithIdTypeText:
+		*s = RecordWithIdTypeText
+		return nil
+	case RecordWithIdTypeBinary:
+		*s = RecordWithIdTypeBinary
+		return nil
+	case RecordWithIdTypeCard:
+		*s = RecordWithIdTypeCard
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type RecordsGetOKApplicationJSON []RecordWithId
 
 func (*RecordsGetOKApplicationJSON) recordsGetRes() {}
 

@@ -6,6 +6,7 @@ WORKDIR /go/src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
+RUN go generate $(go list ./... | grep -v /vendor/)
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o goph-keeper-server \
     -ldflags "-X 'main.buildVersion=${VERSION}' -X 'main.buildDate=${DATE}'" \
     ./cmd/server

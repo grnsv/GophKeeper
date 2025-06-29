@@ -24,10 +24,8 @@ func (s *AuthToken) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *AuthToken) encodeFields(e *jx.Encoder) {
 	{
-		if s.Token.Set {
-			e.FieldStart("token")
-			s.Token.Encode(e)
-		}
+		e.FieldStart("token")
+		e.Str(s.Token)
 	}
 }
 
@@ -40,13 +38,16 @@ func (s *AuthToken) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode AuthToken to nil")
 	}
+	var requiredBitSet [1]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
 		case "token":
+			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
-				s.Token.Reset()
-				if err := s.Token.Decode(d); err != nil {
+				v, err := d.Str()
+				s.Token = string(v)
+				if err != nil {
 					return err
 				}
 				return nil
@@ -59,6 +60,38 @@ func (s *AuthToken) Decode(d *jx.Decoder) error {
 		return nil
 	}); err != nil {
 		return errors.Wrap(err, "decode AuthToken")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfAuthToken) {
+					name = jsonFieldsNameOfAuthToken[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
 	}
 
 	return nil
@@ -206,6 +239,10 @@ func (s *Record) encodeFields(e *jx.Encoder) {
 		e.Base64(s.Data)
 	}
 	{
+		e.FieldStart("nonce")
+		e.Base64(s.Nonce)
+	}
+	{
 		e.FieldStart("metadata")
 		s.Metadata.Encode(e)
 	}
@@ -215,12 +252,13 @@ func (s *Record) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfRecord = [5]string{
+var jsonFieldsNameOfRecord = [6]string{
 	0: "id",
 	1: "type",
 	2: "data",
-	3: "metadata",
-	4: "version",
+	3: "nonce",
+	4: "metadata",
+	5: "version",
 }
 
 // Decode decodes Record from json.
@@ -264,8 +302,20 @@ func (s *Record) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"data\"")
 			}
-		case "metadata":
+		case "nonce":
 			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Base64()
+				s.Nonce = []byte(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"nonce\"")
+			}
+		case "metadata":
+			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				if err := s.Metadata.Decode(d); err != nil {
 					return err
@@ -275,7 +325,7 @@ func (s *Record) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"metadata\"")
 			}
 		case "version":
-			requiredBitSet[0] |= 1 << 4
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				v, err := d.Int()
 				s.Version = int(v)
@@ -296,7 +346,7 @@ func (s *Record) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00011110,
+		0b00111110,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -444,9 +494,288 @@ func (s *RecordType) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode implements json.Marshaler.
+func (s *RecordWithId) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *RecordWithId) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("id")
+		json.EncodeUUID(e, s.ID)
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		e.FieldStart("data")
+		e.Base64(s.Data)
+	}
+	{
+		e.FieldStart("nonce")
+		e.Base64(s.Nonce)
+	}
+	{
+		e.FieldStart("metadata")
+		s.Metadata.Encode(e)
+	}
+	{
+		e.FieldStart("version")
+		e.Int(s.Version)
+	}
+}
+
+var jsonFieldsNameOfRecordWithId = [6]string{
+	0: "id",
+	1: "type",
+	2: "data",
+	3: "nonce",
+	4: "metadata",
+	5: "version",
+}
+
+// Decode decodes RecordWithId from json.
+func (s *RecordWithId) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode RecordWithId to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := json.DecodeUUID(d)
+				s.ID = v
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "data":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Base64()
+				s.Data = []byte(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"data\"")
+			}
+		case "nonce":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Base64()
+				s.Nonce = []byte(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"nonce\"")
+			}
+		case "metadata":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				if err := s.Metadata.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"metadata\"")
+			}
+		case "version":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Int()
+				s.Version = int(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"version\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode RecordWithId")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00111111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfRecordWithId) {
+					name = jsonFieldsNameOfRecordWithId[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *RecordWithId) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *RecordWithId) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s RecordWithIdMetadata) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields implements json.Marshaler.
+func (s RecordWithIdMetadata) encodeFields(e *jx.Encoder) {
+	for k, elem := range s {
+		e.FieldStart(k)
+
+		if len(elem) != 0 {
+			e.Raw(elem)
+		}
+	}
+}
+
+// Decode decodes RecordWithIdMetadata from json.
+func (s *RecordWithIdMetadata) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode RecordWithIdMetadata to nil")
+	}
+	m := s.init()
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		var elem jx.Raw
+		if err := func() error {
+			v, err := d.RawAppend(nil)
+			elem = jx.Raw(v)
+			if err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrapf(err, "decode field %q", k)
+		}
+		m[string(k)] = elem
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode RecordWithIdMetadata")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s RecordWithIdMetadata) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *RecordWithIdMetadata) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes RecordWithIdType as json.
+func (s RecordWithIdType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes RecordWithIdType from json.
+func (s *RecordWithIdType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode RecordWithIdType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch RecordWithIdType(v) {
+	case RecordWithIdTypeCredentials:
+		*s = RecordWithIdTypeCredentials
+	case RecordWithIdTypeText:
+		*s = RecordWithIdTypeText
+	case RecordWithIdTypeBinary:
+		*s = RecordWithIdTypeBinary
+	case RecordWithIdTypeCard:
+		*s = RecordWithIdTypeCard
+	default:
+		*s = RecordWithIdType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s RecordWithIdType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *RecordWithIdType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes RecordsGetOKApplicationJSON as json.
 func (s RecordsGetOKApplicationJSON) Encode(e *jx.Encoder) {
-	unwrapped := []Record(s)
+	unwrapped := []RecordWithId(s)
 
 	e.ArrStart()
 	for _, elem := range unwrapped {
@@ -460,11 +789,11 @@ func (s *RecordsGetOKApplicationJSON) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode RecordsGetOKApplicationJSON to nil")
 	}
-	var unwrapped []Record
+	var unwrapped []RecordWithId
 	if err := func() error {
-		unwrapped = make([]Record, 0)
+		unwrapped = make([]RecordWithId, 0)
 		if err := d.Arr(func(d *jx.Decoder) error {
-			var elem Record
+			var elem RecordWithId
 			if err := elem.Decode(d); err != nil {
 				return err
 			}

@@ -63,7 +63,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Record'
+                  $ref: '#/components/schemas/RecordWithId'
         '401':
           $ref: '#/components/responses/Unauthorized'
 
@@ -112,7 +112,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Record'
+                $ref: '#/components/schemas/RecordWithId'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -164,6 +164,8 @@ components:
 
     AuthToken:
       type: object
+      required:
+        - token
       properties:
         token:
           type: string
@@ -175,6 +177,7 @@ components:
       required:
         - type
         - data
+        - nonce
         - metadata
         - version
       properties:
@@ -190,6 +193,11 @@ components:
           format: byte
           description: Base64 encoded encrypted data
           example: U3VwZXIgc2VjcmV0IGJpbmFyeSBkYXRh
+        nonce:
+          type: string
+          format: byte
+          description: Base64 encoded nonce used for encryption
+          example: dGhpc2lzYW5vbmNl
         metadata:
           type: object
           additionalProperties: {}
@@ -198,6 +206,11 @@ components:
           type: integer
           description: Data version for synchronization
           minimum: 1
+
+    RecordWithId:
+      allOf:
+        - $ref: '#/components/schemas/Record'
+        - required: [id]
 
     VersionInfo:
       type: object

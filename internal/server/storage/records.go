@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/grnsv/GophKeeper/internal/server/interfaces"
-	"github.com/grnsv/GophKeeper/internal/server/model"
+	"github.com/grnsv/GophKeeper/internal/server/models"
 )
 
 type RecordRepository struct {
@@ -18,7 +18,7 @@ type RecordRepository struct {
 func NewRecordRepository(ctx context.Context, db *sql.DB) (interfaces.RecordRepository, error) {
 	r := &RecordRepository{
 		db:    db,
-		stmts: make(map[string]*sql.Stmt, 4),
+		stmts: make(map[string]*sql.Stmt, 5),
 	}
 	if err := r.initStatements(ctx); err != nil {
 		return nil, err
@@ -30,7 +30,7 @@ func NewRecordRepository(ctx context.Context, db *sql.DB) (interfaces.RecordRepo
 func (r *RecordRepository) initStatements(ctx context.Context) error {
 	queries := map[string]string{
 		"GetRecords":   `SELECT * FROM records WHERE user_id = $1`,
-		"CreateRecord": `INSERT INTO records (id, user_id, type, data, metadata, version) VALUES ($1, $2, $3, $4, $5, $6)`,
+		"CreateRecord": `INSERT INTO records (id, user_id, type, data, nonce, metadata, version) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
 		"GetRecord":    `SELECT * FROM records WHERE id = $1 AND user_id = $2 LIMIT 1`,
 		"DeleteRecord": `DELETE FROM records WHERE id = $1 AND user_id = $2`,
 	}
@@ -56,8 +56,8 @@ func (r *RecordRepository) Close() error {
 	return errors.Join(errs...)
 }
 
-func (r *RecordRepository) GetRecords(ctx context.Context, userID string) ([]*model.Record, error) {
-	var records []*model.Record
+func (r *RecordRepository) GetRecords(ctx context.Context, userID string) ([]*models.Record, error) {
+	var records []*models.Record
 	rows, err := r.stmts["GetRecords"].QueryContext(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -65,12 +65,13 @@ func (r *RecordRepository) GetRecords(ctx context.Context, userID string) ([]*mo
 	defer rows.Close()
 
 	for rows.Next() {
-		var record model.Record
+		var record models.Record
 		if err := rows.Scan(
 			&record.ID,
 			&record.UserID,
 			&record.Type,
 			&record.Data,
+			&record.Nonce,
 			&record.Metadata,
 			&record.Version,
 		); err != nil {
@@ -86,14 +87,15 @@ func (r *RecordRepository) GetRecords(ctx context.Context, userID string) ([]*mo
 	return records, nil
 }
 
-func (r *RecordRepository) CreateRecord(ctx context.Context, rec *model.Record) error {
-	if _, err := r.stmts["CreateRecord"].ExecContext(ctx, rec.ID, rec.UserID, rec.Type, rec.Data, rec.Metadata, rec.Version); err != nil {
+func (r *RecordRepository) CreateRecord(ctx context.Context, rec *models.Record) error {
+	_, err := r.stmts["CreateRecord"].ExecContext(ctx, rec.ID, rec.UserID, rec.Type, rec.Data, rec.Nonce, rec.Metadata, rec.Version)
+	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *RecordRepository) UpdateRecord(ctx context.Context, rec *model.Record) error {
+func (r *RecordRepository) UpdateRecord(ctx context.Context, rec *models.Record) error {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return err
@@ -112,8 +114,8 @@ func (r *RecordRepository) UpdateRecord(ctx context.Context, rec *model.Record) 
 		return interfaces.ErrVersionConflict
 	}
 	_, err = tx.ExecContext(ctx,
-		"UPDATE records SET type = $1, data = $2, metadata = $3, version = $4 WHERE id = $5 AND user_id = $6",
-		rec.Type, rec.Data, rec.Metadata, rec.Version, rec.ID, rec.UserID,
+		"UPDATE records SET type = $1, data = $2, nonce = $3, metadata = $4, version = $5 WHERE id = $6 AND user_id = $7",
+		rec.Type, rec.Data, rec.Nonce, rec.Metadata, rec.Version, rec.ID, rec.UserID,
 	)
 	if err != nil {
 		return err
@@ -121,13 +123,14 @@ func (r *RecordRepository) UpdateRecord(ctx context.Context, rec *model.Record) 
 	return tx.Commit()
 }
 
-func (r *RecordRepository) GetRecord(ctx context.Context, userID string, id uuid.UUID) (*model.Record, error) {
-	var rec model.Record
+func (r *RecordRepository) GetRecord(ctx context.Context, userID string, id uuid.UUID) (*models.Record, error) {
+	var rec models.Record
 	if err := r.stmts["GetRecord"].QueryRowContext(ctx, id, userID).Scan(
 		&rec.ID,
 		&rec.UserID,
 		&rec.Type,
 		&rec.Data,
+		&rec.Nonce,
 		&rec.Metadata,
 		&rec.Version,
 	); err != nil {

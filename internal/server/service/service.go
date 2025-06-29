@@ -8,7 +8,7 @@ import (
 	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
 	"github.com/grnsv/GophKeeper/internal/server/interfaces"
-	"github.com/grnsv/GophKeeper/internal/server/model"
+	"github.com/grnsv/GophKeeper/internal/server/models"
 )
 
 type Service struct {
@@ -44,7 +44,7 @@ func (s *Service) Register(ctx context.Context, login, password string) (string,
 		return "", interfaces.ErrLoginTaken
 	}
 
-	user := &model.User{
+	user := &models.User{
 		Login: login,
 	}
 	if user.PasswordHash, err = argon2id.CreateHash(password, argon2id.DefaultParams); err != nil {
@@ -77,18 +77,18 @@ func (s *Service) Login(ctx context.Context, login, password string) (string, er
 	return s.jwts.BuildJWT(user.ID)
 }
 
-func (s *Service) GetRecords(ctx context.Context, userID string) ([]*model.Record, error) {
+func (s *Service) GetRecords(ctx context.Context, userID string) ([]*models.Record, error) {
 	return s.storage.GetRecords(ctx, userID)
 }
 
-func (s *Service) SaveRecord(ctx context.Context, rec *model.Record) error {
+func (s *Service) SaveRecord(ctx context.Context, rec *models.Record) error {
 	if rec.Version == 1 {
 		return s.storage.CreateRecord(ctx, rec)
 	}
 	return s.storage.UpdateRecord(ctx, rec)
 }
 
-func (s *Service) GetRecord(ctx context.Context, userID string, id uuid.UUID) (*model.Record, error) {
+func (s *Service) GetRecord(ctx context.Context, userID string, id uuid.UUID) (*models.Record, error) {
 	return s.storage.GetRecord(ctx, userID, id)
 }
 
