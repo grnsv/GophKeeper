@@ -69,7 +69,7 @@ func (h *Handler) getUserID(ctx context.Context) (string, error) {
 func (h *Handler) convertRecordToApiRecord(rec *models.Record) (*api.RecordWithId, error) {
 	record := api.RecordWithId{
 		ID:       rec.ID,
-		Type:     api.RecordWithIdType(rec.Type),
+		Type:     api.RecordType(rec.Type),
 		Data:     rec.Data,
 		Nonce:    rec.Nonce,
 		Metadata: make(api.RecordWithIdMetadata),

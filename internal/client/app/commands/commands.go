@@ -99,3 +99,21 @@ func Sync(svc interfaces.Service) tea.Cmd {
 		return types.SyncMsg{Err: svc.Sync(context.Background())}
 	}
 }
+
+func Error(err error) tea.Cmd {
+	return func() tea.Msg {
+		return types.ErrMsg{Err: err}
+	}
+}
+
+func SubmitData(data []byte) tea.Cmd {
+	return func() tea.Msg {
+		return types.DataMsg{Data: data}
+	}
+}
+
+func SaveRecord(svc interfaces.Service, record *models.Record) tea.Cmd {
+	return func() tea.Msg {
+		return types.ErrMsg{Err: svc.SaveRecord(context.Background(), record)}
+	}
+}

@@ -2,6 +2,10 @@ package types
 
 import "github.com/grnsv/GophKeeper/internal/client/models"
 
+type ErrMsg struct {
+	Err error
+}
+
 type FetchVersionsMsg struct {
 	ServerVersion models.VersionInfo
 	Offline       bool
@@ -18,9 +22,7 @@ type RecordTypeSelectedMsg struct {
 
 type BackToMenuMsg struct{}
 
-type AuthMsg struct {
-	Err error
-}
+type AuthMsg ErrMsg
 
 type RecordsMsg struct {
 	Records []*models.Record
@@ -29,6 +31,8 @@ type RecordsMsg struct {
 
 type SyncTickMsg struct{}
 
-type SyncMsg struct {
-	Err error
+type SyncMsg ErrMsg
+
+type DataMsg struct {
+	Data []byte
 }

@@ -4,35 +4,41 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/grnsv/GophKeeper/internal/client/app/commands"
 	"github.com/grnsv/GophKeeper/internal/client/app/types"
+	"github.com/grnsv/GophKeeper/internal/client/interfaces"
 	"github.com/grnsv/GophKeeper/internal/client/models"
 )
 
 type editModel struct {
+	svc    interfaces.Service
 	record *models.Record
 	screen tea.Model
 }
 
-func NewEdit(record *models.Record) tea.Model {
-	m := editModel{record: record}
+func NewEdit(svc interfaces.Service, record *models.Record) (tea.Model, error) {
+	m := editModel{svc: svc, record: record}
 	if m.record == nil {
 		m.record = &models.Record{}
 	}
-	m.screen = getScreenByType(m.record)
-	return m
+	var err error
+	m.screen, err = getScreenByType(m.record)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
-func getScreenByType(record *models.Record) tea.Model {
+func getScreenByType(record *models.Record) (tea.Model, error) {
 	switch record.Type {
 	case models.RecordTypeCredentials:
 		return NewEditCredentials(record.Data)
 	case models.RecordTypeText:
-		return NewEditText(record.Data)
+		return NewEditText(record.Data), nil
 	case models.RecordTypeBinary:
-		return NewEditBinary(record.Data)
+		return NewEditBinary(record.Data), nil
 	case models.RecordTypeCard:
-		return NewEditCard(record.Data)
+		return NewEditCard(record.Data), nil
 	default:
-		return NewEditType()
+		return NewEditType(), nil
 	}
 }
 
@@ -49,7 +55,14 @@ func (m editModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case types.RecordTypeSelectedMsg:
 		m.record.Type = msg.RecordType
-		return m.changeScreen(getScreenByType(m.record))
+		screen, err := getScreenByType(m.record)
+		if err != nil {
+			return m, commands.Error(err)
+		}
+		return m.changeScreen(screen)
+	case types.DataMsg:
+		m.record.Data = msg.Data
+		return m, tea.Batch(commands.BackToMenu, commands.SaveRecord(m.svc, m.record))
 	}
 
 	newScreen, cmd := m.screen.Update(msg)

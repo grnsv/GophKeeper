@@ -37,7 +37,11 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// case "Show":
 		// 	m.screen = screens.NewList(m.svc)
 		case "Add":
-			return m.changeScreen(screens.NewEdit(nil))
+			screen, err := screens.NewEdit(m.svc, nil)
+			if err != nil {
+				return m, commands.Error(err)
+			}
+			return m.changeScreen(screen)
 		case "Sync":
 			return m, tea.Batch(m.trySync(), commands.BackToMenu)
 		}
@@ -61,7 +65,7 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case types.SyncTickMsg:
 		return m, tea.Batch(commands.SyncTick(), m.trySync())
 
-	case types.SyncMsg:
+	case types.ErrMsg:
 		if msg.Err != nil {
 			m.err = msg.Err
 		}
