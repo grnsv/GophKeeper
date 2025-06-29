@@ -21,7 +21,10 @@ func New(userID string, encryptionKey []byte) (interfaces.Storage, error) {
 	if err != nil {
 		return nil, err
 	}
-	db, err := badger.Open(badger.DefaultOptions(path).WithLogger(nil).WithEncryptionKey(encryptionKey))
+	db, err := badger.Open(badger.DefaultOptions(path).
+		WithLogger(nil).
+		WithEncryptionKey(encryptionKey).
+		WithIndexCacheSize(10 << 20))
 	if err != nil {
 		return nil, err
 	}
