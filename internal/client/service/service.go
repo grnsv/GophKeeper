@@ -19,14 +19,16 @@ import (
 
 type Service struct {
 	client         *api.Client
+	security       interfaces.SecuritySource
 	newUserStorage interfaces.NewUserStorage
 	storage        interfaces.Storage
 	encryptionKey  []byte
 }
 
-func New(client *api.Client, newUserStorage interfaces.NewUserStorage) interfaces.Service {
+func New(client *api.Client, security interfaces.SecuritySource, newUserStorage interfaces.NewUserStorage) interfaces.Service {
 	return &Service{
 		client:         client,
+		security:       security,
 		newUserStorage: newUserStorage,
 	}
 }
@@ -57,9 +59,9 @@ func (s *Service) Register(ctx context.Context, login, password string) error {
 	if err != nil {
 		return err
 	}
-	switch v := res.(type) {
+	switch res := res.(type) {
 	case *api.AuthToken:
-		return s.initUserStorage(v, login, password)
+		return s.handleAuth(res, login, password)
 	case *api.RegisterPostBadRequest:
 		return interfaces.ErrBadRequest
 	case *api.RegisterPostConflict:
@@ -74,9 +76,9 @@ func (s *Service) Login(ctx context.Context, login, password string) error {
 	if err != nil {
 		return err
 	}
-	switch v := res.(type) {
+	switch res := res.(type) {
 	case *api.AuthToken:
-		return s.initUserStorage(v, login, password)
+		return s.handleAuth(res, login, password)
 	case *api.LoginPostBadRequest:
 		return interfaces.ErrBadRequest
 	case *api.Unauthorized:
@@ -84,6 +86,11 @@ func (s *Service) Login(ctx context.Context, login, password string) error {
 	default:
 		return interfaces.ErrUnexpected
 	}
+}
+
+func (s *Service) handleAuth(res *api.AuthToken, login, password string) error {
+	s.security.SetToken(res.Token)
+	return s.initUserStorage(res, login, password)
 }
 
 func (s *Service) initUserStorage(res *api.AuthToken, login, password string) error {

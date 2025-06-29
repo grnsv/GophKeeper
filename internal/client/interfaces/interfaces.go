@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
+	"github.com/grnsv/GophKeeper/internal/api"
 	"github.com/grnsv/GophKeeper/internal/client/models"
 )
 
@@ -16,6 +17,11 @@ var (
 	ErrBadRequest      = errors.New("bad request")
 	ErrUnexpected      = errors.New("unexpected response")
 )
+
+type SecuritySource interface {
+	api.SecuritySource
+	SetToken(token string)
+}
 
 type Service interface {
 	Close() error
