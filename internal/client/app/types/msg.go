@@ -12,6 +12,10 @@ type MenuSelectedMsg struct {
 	Item string
 }
 
+type RecordTypeSelectedMsg struct {
+	RecordType models.RecordType
+}
+
 type BackToMenuMsg struct{}
 
 type AuthMsg struct {

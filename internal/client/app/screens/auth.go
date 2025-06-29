@@ -38,8 +38,8 @@ func NewAuth(svc interfaces.Service, mode AuthMode) tea.Model {
 	for i := range m.inputs {
 		t = textinput.New()
 		t.Cursor.Style = styles.CursorStyle
-		t.CharLimit = 64
-		t.Width = 64
+		t.CharLimit = 32
+		t.Width = 32
 
 		switch i {
 		case 0:

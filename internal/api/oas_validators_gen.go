@@ -111,21 +111,6 @@ func (s *RecordWithId) Validate() error {
 	return nil
 }
 
-func (s RecordWithIdType) Validate() error {
-	switch s {
-	case "credentials":
-		return nil
-	case "text":
-		return nil
-	case "binary":
-		return nil
-	case "card":
-		return nil
-	default:
-		return errors.Errorf("invalid value: %v", s)
-	}
-}
-
 func (s RecordsGetOKApplicationJSON) Validate() error {
 	alias := ([]RecordWithId)(s)
 	if alias == nil {

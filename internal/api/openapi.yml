@@ -186,8 +186,7 @@ components:
           format: uuid
           readOnly: true
         type:
-          type: string
-          enum: [credentials, text, binary, card]
+          $ref: '#/components/schemas/RecordType'
         data:
           type: string
           format: byte
@@ -211,6 +210,10 @@ components:
       allOf:
         - $ref: '#/components/schemas/Record'
         - required: [id]
+
+    RecordType:
+      type: string
+      enum: [credentials, text, binary, card]
 
     VersionInfo:
       type: object

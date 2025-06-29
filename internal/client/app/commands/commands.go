@@ -9,6 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/grnsv/GophKeeper/internal/client/app/types"
 	"github.com/grnsv/GophKeeper/internal/client/interfaces"
+	"github.com/grnsv/GophKeeper/internal/client/models"
 )
 
 const timeout = 5 * time.Second
@@ -39,6 +40,12 @@ func fetchVersions(svc interfaces.Service) types.FetchVersionsMsg {
 func Select(item string) tea.Cmd {
 	return func() tea.Msg {
 		return types.MenuSelectedMsg{Item: item}
+	}
+}
+
+func SelectType(recordType models.RecordType) tea.Cmd {
+	return func() tea.Msg {
+		return types.RecordTypeSelectedMsg{RecordType: recordType}
 	}
 }
 

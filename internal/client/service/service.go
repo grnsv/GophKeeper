@@ -244,7 +244,7 @@ func (s *Service) FetchRecord(ctx context.Context, id uuid.UUID) (*models.Record
 	case *api.RecordWithId:
 		record := &models.Record{
 			ID:       id,
-			Type:     string(rec.Type),
+			Type:     models.RecordType(rec.Type),
 			Data:     rec.Data,
 			Nonce:    rec.Nonce,
 			Metadata: rec.Metadata,
@@ -321,7 +321,7 @@ func (s *Service) decryptFetchedRecords(res *api.RecordsGetOKApplicationJSON) (m
 	for _, rec := range *res {
 		record := &models.Record{
 			ID:       rec.ID,
-			Type:     string(rec.Type),
+			Type:     models.RecordType(rec.Type),
 			Data:     rec.Data,
 			Nonce:    rec.Nonce,
 			Metadata: rec.Metadata,

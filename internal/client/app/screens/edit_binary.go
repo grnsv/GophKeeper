@@ -7,7 +7,7 @@ import (
 type editBinaryModel struct {
 }
 
-func NewEditBinary() tea.Model {
+func NewEditBinary(data []byte) tea.Model {
 	return &editBinaryModel{}
 }
 

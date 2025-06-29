@@ -7,7 +7,7 @@ import (
 type editCardModel struct {
 }
 
-func NewEditCard() tea.Model {
+func NewEditCard(data []byte) tea.Model {
 	return &editCardModel{}
 }
 

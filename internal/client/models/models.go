@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/go-faster/jx"
 	"github.com/google/uuid"
+	"github.com/grnsv/GophKeeper/internal/api"
 )
 
 type OptString string
@@ -37,9 +38,18 @@ const (
 	RecordStatusDeleted  RecordStatus = "deleted"
 )
 
+type RecordType api.RecordType
+
+const (
+	RecordTypeCredentials RecordType = RecordType(api.RecordTypeCredentials)
+	RecordTypeText        RecordType = RecordType(api.RecordTypeText)
+	RecordTypeBinary      RecordType = RecordType(api.RecordTypeBinary)
+	RecordTypeCard        RecordType = RecordType(api.RecordTypeCard)
+)
+
 type Record struct {
 	ID       uuid.UUID
-	Type     string
+	Type     RecordType
 	Data     []byte
 	Nonce    []byte
 	Metadata map[string]jx.Raw

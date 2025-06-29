@@ -7,7 +7,7 @@ import (
 type editTextModel struct {
 }
 
-func NewEditText() tea.Model {
+func NewEditText(data []byte) tea.Model {
 	return &editTextModel{}
 }
 

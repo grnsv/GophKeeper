@@ -37,7 +37,7 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// case "Show":
 		// 	m.screen = screens.NewList(m.svc)
 		case "Add":
-			return m.changeScreen(screens.NewEdit(screens.EditModeCreate))
+			return m.changeScreen(screens.NewEdit(nil))
 		case "Sync":
 			return m, tea.Batch(m.trySync(), commands.BackToMenu)
 		}

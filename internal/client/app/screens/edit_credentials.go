@@ -7,7 +7,7 @@ import (
 type editCredentialsModel struct {
 }
 
-func NewEditCredentials() tea.Model {
+func NewEditCredentials(data []byte) tea.Model {
 	return &editCredentialsModel{}
 }
 

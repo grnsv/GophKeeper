@@ -283,6 +283,7 @@ func (s *RecordMetadata) init() RecordMetadata {
 	return m
 }
 
+// Ref: #/components/schemas/RecordType
 type RecordType string
 
 const (
@@ -341,8 +342,8 @@ func (s *RecordType) UnmarshalText(data []byte) error {
 // Merged schema.
 // Ref: #/components/schemas/RecordWithId
 type RecordWithId struct {
-	ID   uuid.UUID        `json:"id"`
-	Type RecordWithIdType `json:"type"`
+	ID   uuid.UUID  `json:"id"`
+	Type RecordType `json:"type"`
 	// Base64 encoded encrypted data.
 	Data []byte `json:"data"`
 	// Base64 encoded nonce used for encryption.
@@ -359,7 +360,7 @@ func (s *RecordWithId) GetID() uuid.UUID {
 }
 
 // GetType returns the value of Type.
-func (s *RecordWithId) GetType() RecordWithIdType {
+func (s *RecordWithId) GetType() RecordType {
 	return s.Type
 }
 
@@ -389,7 +390,7 @@ func (s *RecordWithId) SetID(val uuid.UUID) {
 }
 
 // SetType sets the value of Type.
-func (s *RecordWithId) SetType(val RecordWithIdType) {
+func (s *RecordWithId) SetType(val RecordType) {
 	s.Type = val
 }
 
@@ -425,61 +426,6 @@ func (s *RecordWithIdMetadata) init() RecordWithIdMetadata {
 		*s = m
 	}
 	return m
-}
-
-type RecordWithIdType string
-
-const (
-	RecordWithIdTypeCredentials RecordWithIdType = "credentials"
-	RecordWithIdTypeText        RecordWithIdType = "text"
-	RecordWithIdTypeBinary      RecordWithIdType = "binary"
-	RecordWithIdTypeCard        RecordWithIdType = "card"
-)
-
-// AllValues returns all RecordWithIdType values.
-func (RecordWithIdType) AllValues() []RecordWithIdType {
-	return []RecordWithIdType{
-		RecordWithIdTypeCredentials,
-		RecordWithIdTypeText,
-		RecordWithIdTypeBinary,
-		RecordWithIdTypeCard,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s RecordWithIdType) MarshalText() ([]byte, error) {
-	switch s {
-	case RecordWithIdTypeCredentials:
-		return []byte(s), nil
-	case RecordWithIdTypeText:
-		return []byte(s), nil
-	case RecordWithIdTypeBinary:
-		return []byte(s), nil
-	case RecordWithIdTypeCard:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *RecordWithIdType) UnmarshalText(data []byte) error {
-	switch RecordWithIdType(data) {
-	case RecordWithIdTypeCredentials:
-		*s = RecordWithIdTypeCredentials
-		return nil
-	case RecordWithIdTypeText:
-		*s = RecordWithIdTypeText
-		return nil
-	case RecordWithIdTypeBinary:
-		*s = RecordWithIdTypeBinary
-		return nil
-	case RecordWithIdTypeCard:
-		*s = RecordWithIdTypeCard
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
 }
 
 type RecordsGetOKApplicationJSON []RecordWithId

@@ -729,50 +729,6 @@ func (s *RecordWithIdMetadata) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
-// Encode encodes RecordWithIdType as json.
-func (s RecordWithIdType) Encode(e *jx.Encoder) {
-	e.Str(string(s))
-}
-
-// Decode decodes RecordWithIdType from json.
-func (s *RecordWithIdType) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode RecordWithIdType to nil")
-	}
-	v, err := d.StrBytes()
-	if err != nil {
-		return err
-	}
-	// Try to use constant string.
-	switch RecordWithIdType(v) {
-	case RecordWithIdTypeCredentials:
-		*s = RecordWithIdTypeCredentials
-	case RecordWithIdTypeText:
-		*s = RecordWithIdTypeText
-	case RecordWithIdTypeBinary:
-		*s = RecordWithIdTypeBinary
-	case RecordWithIdTypeCard:
-		*s = RecordWithIdTypeCard
-	default:
-		*s = RecordWithIdType(v)
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s RecordWithIdType) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *RecordWithIdType) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
 // Encode encodes RecordsGetOKApplicationJSON as json.
 func (s RecordsGetOKApplicationJSON) Encode(e *jx.Encoder) {
 	unwrapped := []RecordWithId(s)
