@@ -9,21 +9,21 @@ import (
 )
 
 type appModel struct {
-	svc             interfaces.Service
-	screen          tea.Model
-	versions        *models.Versions
-	width           int
-	err             error
-	offline         bool
-	isAuthenticated bool
-	hasConflicts    bool
+	svc           interfaces.Service
+	screen        tea.Model
+	versions      models.Versions
+	width         int
+	errMsg        string
+	connected     bool
+	authenticated bool
+	hasConflicts  bool
 }
 
 func New(svc interfaces.Service, clientBuildVersion, clientBuildDate string) tea.Model {
-	return &appModel{
+	return appModel{
 		svc:    svc,
 		screen: screens.NewMenu(svc, screens.MenuGuest),
-		versions: &models.Versions{Client: models.VersionInfo{
+		versions: models.Versions{Client: models.VersionInfo{
 			BuildVersion: models.OptString(clientBuildVersion),
 			BuildDate:    models.OptString(clientBuildDate),
 		}},

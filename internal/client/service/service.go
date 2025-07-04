@@ -186,12 +186,11 @@ func (s *Service) syncPendingRecord(ctx context.Context, record *models.Record) 
 		return err
 	}
 	res, err := s.client.RecordsIDPut(ctx, &api.Record{
-		ID:       api.NewOptUUID(record.ID),
-		Type:     api.RecordType(record.Type),
-		Data:     record.Data,
-		Nonce:    record.Nonce,
-		Metadata: record.Metadata,
-		Version:  record.Version,
+		ID:      api.NewOptUUID(record.ID),
+		Type:    api.RecordType(record.Type),
+		Data:    record.Data,
+		Nonce:   record.Nonce,
+		Version: record.Version,
 	}, api.RecordsIDPutParams{
 		ID: record.ID,
 	})
@@ -243,13 +242,12 @@ func (s *Service) FetchRecord(ctx context.Context, id uuid.UUID) (*models.Record
 	switch rec := res.(type) {
 	case *api.RecordWithId:
 		record := &models.Record{
-			ID:       id,
-			Type:     models.RecordType(rec.Type),
-			Data:     rec.Data,
-			Nonce:    rec.Nonce,
-			Metadata: rec.Metadata,
-			Version:  rec.Version,
-			Status:   models.RecordStatusSynced,
+			ID:      id,
+			Type:    models.RecordType(rec.Type),
+			Data:    rec.Data,
+			Nonce:   rec.Nonce,
+			Version: rec.Version,
+			Status:  models.RecordStatusSynced,
 		}
 		if err := s.decryptRecord(record); err != nil {
 			return nil, err
@@ -320,12 +318,11 @@ func (s *Service) decryptFetchedRecords(res *api.RecordsGetOKApplicationJSON) (m
 	records := make(map[uuid.UUID]*models.Record, len(*res)*8/7+1)
 	for _, rec := range *res {
 		record := &models.Record{
-			ID:       rec.ID,
-			Type:     models.RecordType(rec.Type),
-			Data:     rec.Data,
-			Nonce:    rec.Nonce,
-			Metadata: rec.Metadata,
-			Version:  rec.Version,
+			ID:      rec.ID,
+			Type:    models.RecordType(rec.Type),
+			Data:    rec.Data,
+			Nonce:   rec.Nonce,
+			Version: rec.Version,
 		}
 		if err := s.decryptRecord(record); err != nil {
 			return nil, err

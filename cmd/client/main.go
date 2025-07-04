@@ -57,6 +57,6 @@ func main() {
 	srv := service.New(client, security, storage.New)
 	defer srv.Close()
 
-	_, err = tea.NewProgram(app.New(srv, buildVersion, buildDate), tea.WithContext(ctx)).Run()
+	_, err = tea.NewProgram(app.New(srv, buildVersion, buildDate), tea.WithContext(ctx), tea.WithAltScreen()).Run()
 	fatalIfErr("program error", err)
 }

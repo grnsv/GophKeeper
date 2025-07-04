@@ -1,7 +1,6 @@
 package models
 
 import (
-	"github.com/go-faster/jx"
 	"github.com/google/uuid"
 	"github.com/grnsv/GophKeeper/internal/api"
 )
@@ -48,11 +47,10 @@ const (
 )
 
 type Record struct {
-	ID       uuid.UUID
-	Type     RecordType
-	Data     []byte
-	Nonce    []byte
-	Metadata map[string]jx.Raw
-	Version  int
-	Status   RecordStatus
+	ID      uuid.UUID
+	Type    RecordType
+	Data    []byte
+	Nonce   []byte
+	Version int
+	Status  RecordStatus
 }

@@ -6,9 +6,10 @@ type ErrMsg struct {
 	Err error
 }
 
+type ErrClearedMsg struct{}
+
 type FetchVersionsMsg struct {
 	ServerVersion models.VersionInfo
-	Offline       bool
 	Err           error
 }
 
@@ -35,4 +36,8 @@ type SyncMsg ErrMsg
 
 type DataMsg struct {
 	Data []byte
+}
+
+type MetadataMsg struct {
+	Metadata Metadata
 }

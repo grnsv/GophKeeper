@@ -12,9 +12,17 @@ import (
 	"github.com/grnsv/GophKeeper/internal/client/app/types"
 )
 
+const (
+	resource = iota
+	login
+	password
+)
+
 type editCredentialsModel struct {
-	focusIndex int
-	inputs     []textinput.Model
+	data           types.Credentials
+	focusIndex     int
+	inputs         []textinput.Model
+	metadataScreen tea.Model
 }
 
 func NewEditCredentials(data []byte) (tea.Model, error) {
@@ -22,41 +30,36 @@ func NewEditCredentials(data []byte) (tea.Model, error) {
 		inputs: make([]textinput.Model, 3),
 	}
 
-	credentials := types.Credentials{}
-	if len(data) > 0 {
-		if err := json.Unmarshal(data, &credentials); err != nil {
-			return nil, err
-		}
+	var err error
+	if m.data, err = m.decodeData(data); err != nil {
+		return nil, err
 	}
 
 	var t textinput.Model
 	for i := range m.inputs {
 		t = textinput.New()
 		t.Cursor.Style = styles.CursorStyle
-		t.CharLimit = 64
-		t.Width = 64
+		t.CharLimit = 32
+		t.Width = 32
+		t.Prompt = ""
 
 		switch i {
-		case 0:
-			t.Placeholder = "Resource"
+		case resource:
+			t.Placeholder = "https://passport.yandex.ru/"
+			t.CharLimit = 64
+			t.Width = 64
 			t.Focus()
 			t.PromptStyle = styles.FocusedStyle
 			t.TextStyle = styles.FocusedStyle
-			if credentials.Resource != "" {
-				t.SetValue(credentials.Resource)
-			}
-		case 1:
-			t.Placeholder = "Login"
-			if credentials.Login != "" {
-				t.SetValue(credentials.Login)
-			}
-		case 2:
-			t.Placeholder = "Password"
+			t.SetValue(m.data.Resource)
+		case login:
+			t.Placeholder = "user@yandex.ru"
+			t.SetValue(m.data.Login)
+		case password:
+			t.Placeholder = "Pa$$w0rd"
 			t.EchoMode = textinput.EchoPassword
 			t.EchoCharacter = '•'
-			if credentials.Password != "" {
-				t.SetValue(credentials.Password)
-			}
+			t.SetValue(m.data.Password)
 		}
 
 		m.inputs[i] = t
@@ -65,11 +68,31 @@ func NewEditCredentials(data []byte) (tea.Model, error) {
 	return m, nil
 }
 
+func (m editCredentialsModel) decodeData(bytes []byte) (data types.Credentials, err error) {
+	data.Metadata = make(types.Metadata)
+	if len(bytes) > 0 {
+		err = json.Unmarshal(bytes, &data)
+	}
+	return
+}
+
 func (m editCredentialsModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
 func (m editCredentialsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case types.MetadataMsg:
+		m.data.Metadata = msg.Metadata
+		return m, commands.SubmitData(m.data)
+	}
+
+	var cmd tea.Cmd
+	if m.metadataScreen != nil {
+		m.metadataScreen, cmd = m.metadataScreen.Update(msg)
+		return m, cmd
+	}
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -77,15 +100,11 @@ func (m editCredentialsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			s := msg.String()
 
 			if s == "enter" && m.focusIndex == len(m.inputs) {
-				data, err := json.Marshal(types.Credentials{
-					Resource: m.inputs[0].Value(),
-					Login:    m.inputs[1].Value(),
-					Password: m.inputs[2].Value(),
-				})
-				if err != nil {
-					return m, commands.Error(err)
-				}
-				return m, commands.SubmitData(data)
+				m.data.Resource = m.inputs[resource].Value()
+				m.data.Login = m.inputs[login].Value()
+				m.data.Password = m.inputs[password].Value()
+				m.metadataScreen = NewEditMetadata(m.data.Metadata)
+				return m, m.metadataScreen.Init()
 			}
 
 			if s == "up" || s == "shift+tab" {
@@ -117,7 +136,7 @@ func (m editCredentialsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	cmd := m.updateInputs(msg)
+	cmd = m.updateInputs(msg)
 
 	return m, cmd
 }
@@ -132,22 +151,32 @@ func (m *editCredentialsModel) updateInputs(msg tea.Msg) tea.Cmd {
 }
 
 func (m editCredentialsModel) View() string {
-	var b strings.Builder
-	b.WriteString("Enter the resource name, login and password\n")
-	for i := range m.inputs {
-		b.WriteString(m.inputs[i].View())
-		if i < len(m.inputs)-1 {
-			b.WriteRune('\n')
-		}
+	if m.metadataScreen != nil {
+		return m.metadataScreen.View()
 	}
 
-	button := "Submit"
+	var b strings.Builder
+	fmt.Fprintf(&b, `Enter the resource name, login and password
+
+ %s
+ %s
+
+ %s  %s
+ %s  %s
+`,
+		styles.InputTextStyle.Width(64).Render("Resource"),
+		m.inputs[resource].View(),
+		styles.InputTextStyle.Width(33).Render("Login"), styles.InputTextStyle.Width(33).Render("Password"),
+		m.inputs[login].View(), m.inputs[password].View(),
+	)
+
+	button := "Continue"
 	if m.focusIndex == len(m.inputs) {
-		button = styles.FocusedButton(button)
+		button = styles.FocusedButtonStyle.Render(button)
 	} else {
-		button = styles.BlurredButton(button)
+		button = styles.ButtonStyle.Render(button)
 	}
-	fmt.Fprintf(&b, "\n\n%s\n\n", button)
+	fmt.Fprintf(&b, "\n%s\n", button)
 
 	return b.String()
 }

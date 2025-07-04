@@ -2,16 +2,19 @@ package screens
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/grnsv/GophKeeper/internal/client/app/commands"
+	"github.com/grnsv/GophKeeper/internal/client/app/styles"
 	"github.com/grnsv/GophKeeper/internal/client/app/types"
 	"github.com/grnsv/GophKeeper/internal/client/interfaces"
 	"github.com/grnsv/GophKeeper/internal/client/models"
 )
 
 type editModel struct {
-	svc    interfaces.Service
-	record *models.Record
-	screen tea.Model
+	svc        interfaces.Service
+	record     *models.Record
+	screen     tea.Model
+	bodyHeight int
 }
 
 func NewEdit(svc interfaces.Service, record *models.Record) (tea.Model, error) {
@@ -32,18 +35,18 @@ func getScreenByType(record *models.Record) (tea.Model, error) {
 	case models.RecordTypeCredentials:
 		return NewEditCredentials(record.Data)
 	case models.RecordTypeText:
-		return NewEditText(record.Data), nil
+		return NewEditText(record.Data)
 	case models.RecordTypeBinary:
-		return NewEditBinary(record.Data), nil
+		return NewEditBinary(record.Data)
 	case models.RecordTypeCard:
-		return NewEditCard(record.Data), nil
+		return NewEditCard(record.Data)
 	default:
 		return NewEditType(), nil
 	}
 }
 
 func (m editModel) Init() tea.Cmd {
-	return m.screen.Init()
+	return tea.Batch(m.screen.Init(), tea.WindowSize())
 }
 
 func (m editModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -63,19 +66,28 @@ func (m editModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case types.DataMsg:
 		m.record.Data = msg.Data
 		return m, tea.Batch(commands.BackToMenu, commands.SaveRecord(m.svc, m.record))
+	case tea.WindowSizeMsg:
+		m.bodyHeight = styles.CalcBodyHeight(msg.Height)
+		msg.Height = m.bodyHeight
+		var cmd tea.Cmd
+		m.screen, cmd = m.screen.Update(msg)
+		return m, cmd
 	}
 
-	newScreen, cmd := m.screen.Update(msg)
-	m.screen = newScreen
+	var cmd tea.Cmd
+	m.screen, cmd = m.screen.Update(msg)
 
 	return m, cmd
 }
 
 func (m editModel) changeScreen(newScreen tea.Model) (tea.Model, tea.Cmd) {
 	m.screen = newScreen
-	return m, m.screen.Init()
+	return m, tea.Batch(m.screen.Init(), tea.WindowSize())
 }
 
 func (m editModel) View() string {
-	return m.screen.View()
+	return lipgloss.JoinVertical(lipgloss.Top,
+		lipgloss.NewStyle().Height(m.bodyHeight).Render(m.screen.View()),
+		styles.FooterStyle.Render("Press Esc to return to the menu."),
+	)
 }

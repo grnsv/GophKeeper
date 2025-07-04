@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/grnsv/GophKeeper/internal/client/app/commands"
 	"github.com/grnsv/GophKeeper/internal/client/app/styles"
 	"github.com/grnsv/GophKeeper/internal/client/interfaces"
@@ -25,10 +26,11 @@ type authModel struct {
 	focusIndex int
 	inputs     []textinput.Model
 	cursorMode cursor.Mode
+	bodyHeight int
 }
 
 func NewAuth(svc interfaces.Service, mode AuthMode) tea.Model {
-	m := &authModel{
+	m := authModel{
 		svc:    svc,
 		mode:   mode,
 		inputs: make([]textinput.Model, 2),
@@ -60,7 +62,7 @@ func NewAuth(svc interfaces.Service, mode AuthMode) tea.Model {
 }
 
 func (m authModel) Init() tea.Cmd {
-	return textinput.Blink
+	return tea.Batch(textinput.Blink, tea.WindowSize())
 }
 
 func (m authModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -120,6 +122,10 @@ func (m authModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			return m, tea.Batch(cmds...)
 		}
+
+	case tea.WindowSizeMsg:
+		m.bodyHeight = styles.CalcBodyHeight(msg.Height)
+		return m, nil
 	}
 
 	cmd := m.updateInputs(msg)
@@ -147,17 +153,17 @@ func (m authModel) View() string {
 		}
 	}
 
-	button := "Submit"
+	button := "Continue"
 	if m.focusIndex == len(m.inputs) {
-		button = styles.FocusedButton(button)
+		button = styles.FocusedButtonStyle.Render(button)
 	} else {
-		button = styles.BlurredButton(button)
+		button = styles.ButtonStyle.Render(button)
 	}
 	fmt.Fprintf(&b, "\n\n%s\n\n", button)
 
-	b.WriteString(styles.HelpStyle.Render("cursor mode is "))
-	b.WriteString(styles.CursorModeHelpStyle.Render(m.cursorMode.String()))
-	b.WriteString(styles.HelpStyle.Render(" (ctrl+r to change style)"))
-
-	return b.String()
+	return lipgloss.JoinVertical(lipgloss.Top,
+		lipgloss.NewStyle().Height(m.bodyHeight).Render(b.String()),
+		styles.FooterStyle.Render("Cursor mode is "+m.cursorMode.String()+
+			" (ctrl+r to change style). Press Esc to return to the menu."),
+	)
 }

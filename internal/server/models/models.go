@@ -1,7 +1,6 @@
 package models
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,11 +14,10 @@ type User struct {
 }
 
 type Record struct {
-	ID       uuid.UUID
-	UserID   string
-	Type     string
-	Data     []byte
-	Nonce    []byte
-	Metadata json.RawMessage
-	Version  int
+	ID      uuid.UUID
+	UserID  string
+	Type    string
+	Data    []byte
+	Nonce   []byte
+	Version int
 }

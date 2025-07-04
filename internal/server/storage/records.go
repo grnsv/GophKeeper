@@ -30,7 +30,7 @@ func NewRecordRepository(ctx context.Context, db *sql.DB) (interfaces.RecordRepo
 func (r *RecordRepository) initStatements(ctx context.Context) error {
 	queries := map[string]string{
 		"GetRecords":   `SELECT * FROM records WHERE user_id = $1`,
-		"CreateRecord": `INSERT INTO records (id, user_id, type, data, nonce, metadata, version) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		"CreateRecord": `INSERT INTO records (id, user_id, type, data, nonce, version) VALUES ($1, $2, $3, $4, $5, $6)`,
 		"GetRecord":    `SELECT * FROM records WHERE id = $1 AND user_id = $2 LIMIT 1`,
 		"DeleteRecord": `DELETE FROM records WHERE id = $1 AND user_id = $2`,
 	}
@@ -72,7 +72,6 @@ func (r *RecordRepository) GetRecords(ctx context.Context, userID string) ([]*mo
 			&record.Type,
 			&record.Data,
 			&record.Nonce,
-			&record.Metadata,
 			&record.Version,
 		); err != nil {
 			return nil, err
@@ -88,8 +87,7 @@ func (r *RecordRepository) GetRecords(ctx context.Context, userID string) ([]*mo
 }
 
 func (r *RecordRepository) CreateRecord(ctx context.Context, rec *models.Record) error {
-	_, err := r.stmts["CreateRecord"].ExecContext(ctx, rec.ID, rec.UserID, rec.Type, rec.Data, rec.Nonce, rec.Metadata, rec.Version)
-	if err != nil {
+	if _, err := r.stmts["CreateRecord"].ExecContext(ctx, rec.ID, rec.UserID, rec.Type, rec.Data, rec.Nonce, rec.Version); err != nil {
 		return err
 	}
 	return nil
@@ -114,8 +112,8 @@ func (r *RecordRepository) UpdateRecord(ctx context.Context, rec *models.Record)
 		return interfaces.ErrVersionConflict
 	}
 	_, err = tx.ExecContext(ctx,
-		"UPDATE records SET type = $1, data = $2, nonce = $3, metadata = $4, version = $5 WHERE id = $6 AND user_id = $7",
-		rec.Type, rec.Data, rec.Nonce, rec.Metadata, rec.Version, rec.ID, rec.UserID,
+		"UPDATE records SET type = $1, data = $2, nonce = $3, version = $4 WHERE id = $5 AND user_id = $6",
+		rec.Type, rec.Data, rec.Nonce, rec.Version, rec.ID, rec.UserID,
 	)
 	if err != nil {
 		return err
@@ -131,7 +129,6 @@ func (r *RecordRepository) GetRecord(ctx context.Context, userID string, id uuid
 		&rec.Type,
 		&rec.Data,
 		&rec.Nonce,
-		&rec.Metadata,
 		&rec.Version,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

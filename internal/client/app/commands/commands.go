@@ -2,8 +2,7 @@ package commands
 
 import (
 	"context"
-	"errors"
-	"net"
+	"encoding/json"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -13,6 +12,12 @@ import (
 )
 
 const timeout = 5 * time.Second
+
+func ClearErrorAfter(d time.Duration) tea.Cmd {
+	return tea.Tick(d, func(time.Time) tea.Msg {
+		return types.ErrClearedMsg{}
+	})
+}
 
 func FetchVersions(svc interfaces.Service) tea.Cmd {
 	return func() tea.Msg {
@@ -26,13 +31,6 @@ func fetchVersions(svc interfaces.Service) types.FetchVersionsMsg {
 
 	msg := types.FetchVersionsMsg{}
 	msg.ServerVersion, msg.Err = svc.FetchServerVersion(ctx)
-	if msg.Err != nil {
-		var netErr *net.OpError
-		if errors.As(msg.Err, &netErr) {
-			msg.Err = nil
-			msg.Offline = true
-		}
-	}
 
 	return msg
 }
@@ -87,7 +85,7 @@ func SyncTick() tea.Cmd {
 func TrySync(svc interfaces.Service) tea.Cmd {
 	return func() tea.Msg {
 		msg := fetchVersions(svc)
-		if msg.Offline || msg.Err != nil {
+		if msg.Err != nil {
 			return msg
 		}
 		return Sync(svc)
@@ -106,8 +104,18 @@ func Error(err error) tea.Cmd {
 	}
 }
 
-func SubmitData(data []byte) tea.Cmd {
+func SubmitMetadata(metadata types.Metadata) tea.Cmd {
 	return func() tea.Msg {
+		return types.MetadataMsg{Metadata: metadata}
+	}
+}
+
+func SubmitData[T types.Data](data T) tea.Cmd {
+	return func() tea.Msg {
+		data, err := json.Marshal(data)
+		if err != nil {
+			return Error(err)
+		}
 		return types.DataMsg{Data: data}
 	}
 }

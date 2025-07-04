@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/go-faster/errors"
-	"github.com/go-faster/jx"
 	"github.com/google/uuid"
 )
 
@@ -205,8 +204,6 @@ type Record struct {
 	Data []byte `json:"data"`
 	// Base64 encoded nonce used for encryption.
 	Nonce []byte `json:"nonce"`
-	// Additional information (any valid json).
-	Metadata RecordMetadata `json:"metadata"`
 	// Data version for synchronization.
 	Version int `json:"version"`
 }
@@ -229,11 +226,6 @@ func (s *Record) GetData() []byte {
 // GetNonce returns the value of Nonce.
 func (s *Record) GetNonce() []byte {
 	return s.Nonce
-}
-
-// GetMetadata returns the value of Metadata.
-func (s *Record) GetMetadata() RecordMetadata {
-	return s.Metadata
 }
 
 // GetVersion returns the value of Version.
@@ -261,26 +253,9 @@ func (s *Record) SetNonce(val []byte) {
 	s.Nonce = val
 }
 
-// SetMetadata sets the value of Metadata.
-func (s *Record) SetMetadata(val RecordMetadata) {
-	s.Metadata = val
-}
-
 // SetVersion sets the value of Version.
 func (s *Record) SetVersion(val int) {
 	s.Version = val
-}
-
-// Additional information (any valid json).
-type RecordMetadata map[string]jx.Raw
-
-func (s *RecordMetadata) init() RecordMetadata {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
 }
 
 // Ref: #/components/schemas/RecordType
@@ -348,8 +323,6 @@ type RecordWithId struct {
 	Data []byte `json:"data"`
 	// Base64 encoded nonce used for encryption.
 	Nonce []byte `json:"nonce"`
-	// Additional information (any valid json).
-	Metadata RecordWithIdMetadata `json:"metadata"`
 	// Data version for synchronization.
 	Version int `json:"version"`
 }
@@ -372,11 +345,6 @@ func (s *RecordWithId) GetData() []byte {
 // GetNonce returns the value of Nonce.
 func (s *RecordWithId) GetNonce() []byte {
 	return s.Nonce
-}
-
-// GetMetadata returns the value of Metadata.
-func (s *RecordWithId) GetMetadata() RecordWithIdMetadata {
-	return s.Metadata
 }
 
 // GetVersion returns the value of Version.
@@ -404,29 +372,12 @@ func (s *RecordWithId) SetNonce(val []byte) {
 	s.Nonce = val
 }
 
-// SetMetadata sets the value of Metadata.
-func (s *RecordWithId) SetMetadata(val RecordWithIdMetadata) {
-	s.Metadata = val
-}
-
 // SetVersion sets the value of Version.
 func (s *RecordWithId) SetVersion(val int) {
 	s.Version = val
 }
 
 func (*RecordWithId) recordsIDGetRes() {}
-
-// Additional information (any valid json).
-type RecordWithIdMetadata map[string]jx.Raw
-
-func (s *RecordWithIdMetadata) init() RecordWithIdMetadata {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
-}
 
 type RecordsGetOKApplicationJSON []RecordWithId
 

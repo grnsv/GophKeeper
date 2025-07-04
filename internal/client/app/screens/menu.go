@@ -5,7 +5,9 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/grnsv/GophKeeper/internal/client/app/commands"
+	"github.com/grnsv/GophKeeper/internal/client/app/styles"
 	"github.com/grnsv/GophKeeper/internal/client/interfaces"
 )
 
@@ -17,13 +19,14 @@ const (
 )
 
 type menuModel struct {
-	svc     interfaces.Service
-	choices []string
-	cursor  int
+	svc        interfaces.Service
+	choices    []string
+	cursor     int
+	bodyHeight int
 }
 
 func NewMenu(svc interfaces.Service, mode MenuMode) tea.Model {
-	m := &menuModel{
+	m := menuModel{
 		svc: svc,
 	}
 	switch mode {
@@ -46,7 +49,7 @@ func NewMenu(svc interfaces.Service, mode MenuMode) tea.Model {
 }
 
 func (m menuModel) Init() tea.Cmd {
-	return nil
+	return tea.WindowSize()
 }
 
 func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -55,17 +58,20 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q":
 			return m, tea.Quit
-		case "up", "k":
+		case "up", "shift+tab":
 			if m.cursor > 0 {
 				m.cursor--
 			}
-		case "down", "j":
+		case "down", "tab":
 			if m.cursor < len(m.choices)-1 {
 				m.cursor++
 			}
-		case "enter", " ":
+		case "enter":
 			return m, commands.Select(m.choices[m.cursor])
 		}
+	case tea.WindowSizeMsg:
+		m.bodyHeight = styles.CalcBodyHeight(msg.Height)
+		return m, nil
 	}
 	return m, nil
 }
@@ -75,10 +81,13 @@ func (m menuModel) View() string {
 	for i, choice := range m.choices {
 		cursor := " "
 		if m.cursor == i {
-			cursor = ">"
+			cursor = styles.CursorStyle.Render(">")
 		}
 		b.WriteString(fmt.Sprintf("%s %s\n", cursor, choice))
 	}
-	b.WriteString("\nPress q to quit.\n")
-	return b.String()
+
+	return lipgloss.JoinVertical(lipgloss.Top,
+		lipgloss.NewStyle().Height(m.bodyHeight).Render(b.String()),
+		styles.FooterStyle.Render("Press q to quit."),
+	)
 }

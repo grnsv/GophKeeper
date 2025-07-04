@@ -178,7 +178,6 @@ components:
         - type
         - data
         - nonce
-        - metadata
         - version
       properties:
         id:
@@ -197,10 +196,6 @@ components:
           format: byte
           description: Base64 encoded nonce used for encryption
           example: dGhpc2lzYW5vbmNl
-        metadata:
-          type: object
-          additionalProperties: {}
-          description: Additional information (any valid json)
         version:
           type: integer
           description: Data version for synchronization

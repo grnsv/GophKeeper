@@ -1,20 +1,22 @@
 package types
 
+type Metadata map[string]string
+
 type Credentials struct {
 	Resource string
 	Login    string
 	Password string
-	Metadata map[string]string
+	Metadata Metadata
 }
 
 type Text struct {
 	Text     string
-	Metadata map[string]string
+	Metadata Metadata
 }
 
 type Binary struct {
 	Binary   []byte
-	Metadata map[string]string
+	Metadata Metadata
 }
 
 type Card struct {
@@ -22,5 +24,9 @@ type Card struct {
 	EXP        string
 	CVV        string
 	CardHolder string
-	Metadata   map[string]string
+	Metadata   Metadata
+}
+
+type Data interface {
+	Credentials | Text | Binary | Card
 }

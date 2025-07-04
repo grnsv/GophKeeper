@@ -6,6 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/grnsv/GophKeeper/internal/client/app/commands"
+	"github.com/grnsv/GophKeeper/internal/client/app/styles"
 	"github.com/grnsv/GophKeeper/internal/client/models"
 )
 
@@ -31,11 +32,11 @@ func (m editTypeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "up", "k":
+		case "up", "shift+tab":
 			if m.cursor > 0 {
 				m.cursor--
 			}
-		case "down", "j":
+		case "down", "tab":
 			if m.cursor < len(m.choices)-1 {
 				m.cursor++
 			}
@@ -51,7 +52,7 @@ func (m editTypeModel) View() string {
 	for i, choice := range m.choices {
 		cursor := " "
 		if m.cursor == i {
-			cursor = ">"
+			cursor = styles.CursorStyle.Render(">")
 		}
 		b.WriteString(fmt.Sprintf("%s %s\n", cursor, choice))
 	}

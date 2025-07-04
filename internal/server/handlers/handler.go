@@ -2,11 +2,8 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
 
-	"github.com/go-faster/jx"
 	"github.com/grnsv/GophKeeper/internal/api"
 	"github.com/grnsv/GophKeeper/internal/server/interfaces"
 	"github.com/grnsv/GophKeeper/internal/server/models"
@@ -66,24 +63,14 @@ func (h *Handler) getUserID(ctx context.Context) (string, error) {
 	return userID, nil
 }
 
-func (h *Handler) convertRecordToApiRecord(rec *models.Record) (*api.RecordWithId, error) {
-	record := api.RecordWithId{
-		ID:       rec.ID,
-		Type:     api.RecordType(rec.Type),
-		Data:     rec.Data,
-		Nonce:    rec.Nonce,
-		Metadata: make(api.RecordWithIdMetadata),
-		Version:  rec.Version,
+func (h *Handler) convertRecordToApiRecord(rec *models.Record) *api.RecordWithId {
+	return &api.RecordWithId{
+		ID:      rec.ID,
+		Type:    api.RecordType(rec.Type),
+		Data:    rec.Data,
+		Nonce:   rec.Nonce,
+		Version: rec.Version,
 	}
-	var metadata map[string]json.RawMessage
-	if err := json.Unmarshal(rec.Metadata, &metadata); err != nil {
-		return nil, fmt.Errorf("unmarshal metadata: %w", err)
-	}
-	for k, v := range metadata {
-		record.Metadata[k] = jx.Raw(v)
-	}
-
-	return &record, nil
 }
 
 func (h *Handler) RecordsGet(ctx context.Context) (api.RecordsGetRes, error) {
@@ -99,11 +86,7 @@ func (h *Handler) RecordsGet(ctx context.Context) (api.RecordsGetRes, error) {
 	length := len(records)
 	out := make(api.RecordsGetOKApplicationJSON, length)
 	for k, rec := range records {
-		record, err := h.convertRecordToApiRecord(rec)
-		if err != nil {
-			return nil, err
-		}
-		out[k] = *record
+		out[k] = *h.convertRecordToApiRecord(rec)
 	}
 	return &out, nil
 }
@@ -120,13 +103,6 @@ func (h *Handler) RecordsIDPut(ctx context.Context, req *api.Record, params api.
 		Data:    req.Data,
 		Nonce:   req.Nonce,
 		Version: req.Version,
-	}
-	if req.Metadata != nil {
-		metadataBytes, err := json.Marshal(req.Metadata)
-		if err != nil {
-			return nil, fmt.Errorf("marshal metadata: %w", err)
-		}
-		rec.Metadata = json.RawMessage(metadataBytes)
 	}
 	if err = h.service.SaveRecord(ctx, rec); err != nil {
 		if errors.Is(err, interfaces.ErrVersionConflict) {
@@ -149,7 +125,7 @@ func (h *Handler) RecordsIDGet(ctx context.Context, params api.RecordsIDGetParam
 		}
 		return nil, err
 	}
-	return h.convertRecordToApiRecord(rec)
+	return h.convertRecordToApiRecord(rec), nil
 }
 
 func (h *Handler) RecordsIDDelete(ctx context.Context, params api.RecordsIDDeleteParams) (api.RecordsIDDeleteRes, error) {

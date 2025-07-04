@@ -1,41 +1,37 @@
 package app
 
 import (
-	"strings"
-
 	"github.com/charmbracelet/lipgloss"
 	"github.com/grnsv/GophKeeper/internal/client/app/styles"
 )
 
 func (m appModel) View() string {
-	var b strings.Builder
-	b.WriteString(renderHeader(m.width, m.offline, m.hasConflicts))
-	b.WriteString("\n")
-	b.WriteString(renderError(m.err))
-	b.WriteString("\n")
-	b.WriteString(m.screen.View())
-
-	return b.String()
+	headerStyle := styles.HeaderStyle.Width(m.width)
+	return lipgloss.JoinVertical(lipgloss.Top,
+		headerStyle.Render(m.renderHeader(m.width-headerStyle.GetHorizontalPadding())),
+		styles.ErrorStyle.Width(m.width).Render(m.renderError()),
+		styles.BodyStyle.Width(m.width).Render(m.screen.View()),
+	)
 }
 
-func renderHeader(width int, offline, hasConflicts bool) string {
-	title := styles.TitleStyle.Render("GophKeeper")
+func (m appModel) renderHeader(width int) string {
+	title := "GophKeeper"
 
 	var connBadge string
-	if offline {
-		connBadge = styles.BoldRed.Render("[OFFLINE]")
+	if m.connected {
+		connBadge = styles.GreenBadgeStyle.Render("ONLINE")
 	} else {
-		connBadge = styles.BoldGreen.Render("[ONLINE]")
+		connBadge = styles.RedBadgeStyle.Render("OFFLINE")
 	}
 
 	var conflictBadge string
-	if hasConflicts {
-		conflictBadge = styles.BoldRed.Render("[CONFLICT]")
+	if m.hasConflicts {
+		conflictBadge = styles.RedBadgeStyle.Render("CONFLICT")
 	} else {
-		conflictBadge = styles.BoldGreen.Render("[NO CONFLICTS]")
+		conflictBadge = styles.GreenBadgeStyle.Render("NO CONFLICTS")
 	}
 
-	badges := lipgloss.JoinHorizontal(lipgloss.Top, connBadge, " ", conflictBadge)
+	badges := lipgloss.JoinHorizontal(lipgloss.Top, connBadge, styles.HeaderBackground.Render(" "), conflictBadge)
 
 	return lipgloss.JoinHorizontal(
 		lipgloss.Top,
@@ -44,10 +40,10 @@ func renderHeader(width int, offline, hasConflicts bool) string {
 	)
 }
 
-func renderError(err error) string {
-	if err == nil {
+func (m appModel) renderError() string {
+	if m.errMsg == "" {
 		return ""
 	}
 
-	return styles.ErrorStyle.Render("Error: " + err.Error())
+	return styles.ErrorStyle.Render("⚠ " + m.errMsg)
 }

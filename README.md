@@ -11,7 +11,7 @@ GophKeeper is a secure client-server application designed to store sensitive inf
 - **Server Storage:** PostgreSQL
   - **Database Schema:**
     - **`users` table:** Stores user details including a unique ID (UUID), login, password hash (Argon2id), and creation timestamp.
-    - **`records` table:** Holds encrypted user records with fields for record ID (UUID), user ID (foreign key), data type (enum: `credentials`, `text`, `binary`, `card`), encrypted data and nonce (bytea), metadata (JSONB), and version number (integer for synchronization tracking). Uses composite primary key: id + user_id.
+    - **`records` table:** Holds encrypted user records with fields for record ID (UUID), user ID (foreign key), data type (enum: `credentials`, `text`, `binary`, `card`), encrypted data and nonce (bytea), and version number (integer for synchronization tracking). Uses composite primary key: id + user_id.
 - **Client Storage:** BadgerDB (local key-value database for caching records)
 - **Encryption:**
   - End-to-end AES-256-GCM encryption
@@ -108,7 +108,7 @@ Displays all records stored in the local BadgerDB cache. User can select a recor
 **Process:**
 1. Select data type:
    - Credentials • Text • Binary • Bank card
-2. Enter data + optional JSON metadata
+2. Enter data + optional metadata
 3. Client:
    - Generates UUID (for new records)
    - Encrypts payload (AES-256-GCM)
@@ -151,7 +151,7 @@ Displays all records stored in the local BadgerDB cache. User can select a recor
 
 ## System Information (`About`)
 
-Displays build metadata:
+Displays build info:
 - Client version/date
 - Server version/date
 
