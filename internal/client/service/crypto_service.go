@@ -14,6 +14,7 @@ import (
 type cryptoService struct {
 	encryptionKey    []byte
 	newCryptoStorage interfaces.NewCryptoStorage
+	block            cipher.Block
 }
 
 func NewCryptoService(newCryptoStorage interfaces.NewCryptoStorage) interfaces.CryptoService {
@@ -22,12 +23,17 @@ func NewCryptoService(newCryptoStorage interfaces.NewCryptoStorage) interfaces.C
 
 func (s *cryptoService) InitCrypto(userID, login, password string) (interfaces.Storage, error) {
 	s.encryptionKey = s.generateKey(userID, login, password)
+	block, err := aes.NewCipher(s.encryptionKey)
+	if err != nil {
+		return nil, err
+	}
+	s.block = block
 	return s.newCryptoStorage(userID, s.encryptionKey)
 }
 
 func (s *cryptoService) generateKey(userID, login, password string) []byte {
 	salt := []byte(login + userID)
-	return argon2.IDKey([]byte(password), salt, 2, 128*1024, 4, 32)
+	return argon2.IDKey([]byte(password), salt, 3, 128*1024, 4, 32)
 }
 
 func (s *cryptoService) EncryptRecord(record *models.Record) error {
@@ -56,9 +62,5 @@ func (s *cryptoService) DecryptRecord(record *models.Record) error {
 }
 
 func (s *cryptoService) newGCM() (cipher.AEAD, error) {
-	block, err := aes.NewCipher(s.encryptionKey)
-	if err != nil {
-		return nil, err
-	}
-	return cipher.NewGCM(block)
+	return cipher.NewGCM(s.block)
 }
