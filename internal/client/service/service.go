@@ -46,10 +46,10 @@ func (s *Service) FetchServerVersion(ctx context.Context) (versionInfo models.Ve
 		return
 	}
 	if serverVersion, ok := res.BuildVersion.Get(); ok {
-		versionInfo.BuildVersion.Set(serverVersion)
+		versionInfo.BuildVersion.SetTo(serverVersion)
 	}
 	if serverBuildDate, ok := res.BuildDate.Get(); ok {
-		versionInfo.BuildDate.Set(serverBuildDate.Format("2006-01-02"))
+		versionInfo.BuildDate.SetTo(serverBuildDate.Format("2006-01-02"))
 	}
 	return
 }

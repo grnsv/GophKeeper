@@ -24,8 +24,8 @@ func New(svc interfaces.Service, clientBuildVersion, clientBuildDate string) tea
 		svc:    svc,
 		screen: screens.NewMenu(svc, screens.MenuGuest),
 		versions: models.Versions{Client: models.VersionInfo{
-			BuildVersion: models.OptString(clientBuildVersion),
-			BuildDate:    models.OptString(clientBuildDate),
+			BuildVersion: models.NewOptString(clientBuildVersion),
+			BuildDate:    models.NewOptString(clientBuildDate),
 		}},
 	}
 }

@@ -5,17 +5,50 @@ import (
 	"github.com/grnsv/GophKeeper/internal/api"
 )
 
-type OptString string
-
-func (s OptString) String() string {
-	if s == "" {
-		return "N/A"
+func NewOptString(v string) OptString {
+	return OptString{
+		Value: v,
+		Set:   true,
 	}
-	return string(s)
 }
 
-func (s *OptString) Set(v string) {
-	*s = OptString(v)
+type OptString struct {
+	Value string
+	Set   bool
+}
+
+func (o OptString) IsSet() bool { return o.Set }
+
+func (o *OptString) Reset() {
+	var v string
+	o.Value = v
+	o.Set = false
+}
+
+func (o *OptString) SetTo(v string) {
+	o.Set = true
+	o.Value = v
+}
+
+func (o OptString) Get() (v string, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+func (o OptString) Or(d string) string {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+func (o OptString) String() string {
+	if o.Set {
+		return o.Value
+	}
+	return "N/A"
 }
 
 type VersionInfo struct {
