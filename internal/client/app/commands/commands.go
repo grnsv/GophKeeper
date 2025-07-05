@@ -55,7 +55,7 @@ func Register(svc interfaces.Service, login, password string) tea.Cmd {
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
-		err := svc.Register(ctx, login, password)
+		_, err := svc.Register(ctx, login, password)
 		return types.AuthMsg{Err: err}
 	}
 }
@@ -64,7 +64,7 @@ func Login(svc interfaces.Service, login, password string) tea.Cmd {
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
-		err := svc.Login(ctx, login, password)
+		_, err := svc.Login(ctx, login, password)
 		return types.AuthMsg{Err: err}
 	}
 }
@@ -122,6 +122,13 @@ func SubmitData[T types.Data](data T) tea.Cmd {
 
 func SaveRecord(svc interfaces.Service, record *models.Record) tea.Cmd {
 	return func() tea.Msg {
-		return types.ErrMsg{Err: svc.SaveRecord(context.Background(), record)}
+		_, err := svc.PushRecord(context.Background(), record)
+		return types.ErrMsg{Err: err}
+	}
+}
+
+func DeleteRecord(svc interfaces.Service, record *models.Record) tea.Cmd {
+	return func() tea.Msg {
+		return types.ErrMsg{Err: svc.ForgetRecord(context.Background(), record)}
 	}
 }

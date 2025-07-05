@@ -24,18 +24,35 @@ type SecuritySource interface {
 }
 
 type Service interface {
-	Close() error
+	AuthService
+	CryptoService
+	SyncService
+	Storage
 	FetchServerVersion(ctx context.Context) (versionInfo models.VersionInfo, err error)
-	Register(ctx context.Context, login, password string) error
-	Login(ctx context.Context, login, password string) error
-	GetRecords() ([]*models.Record, error)
-	SaveRecord(ctx context.Context, record *models.Record) error
-	GetRecord(id uuid.UUID) (*models.Record, error)
-	FetchRecord(ctx context.Context, id uuid.UUID) (*models.Record, error)
-	DeleteRecord(ctx context.Context, record *models.Record) error
+}
+
+type NewAuthService func(client api.Invoker, security SecuritySource) AuthService
+type AuthService interface {
+	Register(ctx context.Context, login, password string) (userID string, err error)
+	Login(ctx context.Context, login, password string) (userID string, err error)
+}
+
+type NewCryptoService func(newCryptoStorage NewCryptoStorage) CryptoService
+type CryptoService interface {
+	InitCrypto(userID, login, password string) (Storage, error)
+	EncryptRecord(record *models.Record) error
+	DecryptRecord(record *models.Record) error
+}
+
+type NewSyncService func(client api.Invoker, storage Storage, crypto CryptoService) SyncService
+type SyncService interface {
+	PushRecord(ctx context.Context, record *models.Record) (*models.Record, error)
+	PullRecord(ctx context.Context, id uuid.UUID) (*models.Record, error)
+	ForgetRecord(ctx context.Context, record *models.Record) error
 	Sync(ctx context.Context) error
 }
 
+type NewCryptoStorage func(userID string, encryptionKey []byte) (Storage, error)
 type Storage interface {
 	Close() error
 	GetRecords() ([]*models.Record, error)
@@ -44,5 +61,3 @@ type Storage interface {
 	IsRecordExists(id uuid.UUID) (exists bool, err error)
 	DeleteRecord(id uuid.UUID) error
 }
-
-type NewUserStorage func(userID string, encryptionKey []byte) (Storage, error)

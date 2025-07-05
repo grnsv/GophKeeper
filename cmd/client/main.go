@@ -54,7 +54,12 @@ func main() {
 	client, err := api.NewClient(cfg.ServerAddress, security)
 	fatalIfErr("client error", err)
 
-	srv := service.New(client, security, storage.New)
+	srv := service.New(client, security,
+		service.NewAuthService,
+		service.NewCryptoService,
+		service.NewSyncService,
+		storage.New,
+	)
 	defer srv.Close()
 
 	_, err = tea.NewProgram(app.New(srv, buildVersion, buildDate), tea.WithContext(ctx), tea.WithAltScreen()).Run()

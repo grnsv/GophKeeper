@@ -12,7 +12,7 @@ import (
 	"github.com/grnsv/GophKeeper/internal/client/models"
 )
 
-type Storage struct {
+type storage struct {
 	db *badger.DB
 }
 
@@ -28,7 +28,7 @@ func New(userID string, encryptionKey []byte) (interfaces.Storage, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Storage{db: db}, nil
+	return &storage{db: db}, nil
 }
 
 func getDBPath(userID string) (string, error) {
@@ -45,11 +45,11 @@ func getDBPath(userID string) (string, error) {
 	return filepath.Join(appDir, userID), nil
 }
 
-func (s *Storage) Close() error {
+func (s *storage) Close() error {
 	return s.db.Close()
 }
 
-func (s *Storage) GetRecords() ([]*models.Record, error) {
+func (s *storage) GetRecords() ([]*models.Record, error) {
 	var records []*models.Record
 	err := s.db.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
@@ -77,7 +77,7 @@ func (s *Storage) GetRecords() ([]*models.Record, error) {
 	return records, nil
 }
 
-func (s *Storage) SaveRecord(record *models.Record) error {
+func (s *storage) SaveRecord(record *models.Record) error {
 	data, err := json.Marshal(record)
 	if err != nil {
 		return err
@@ -87,7 +87,7 @@ func (s *Storage) SaveRecord(record *models.Record) error {
 	})
 }
 
-func (s *Storage) GetRecord(id uuid.UUID) (*models.Record, error) {
+func (s *storage) GetRecord(id uuid.UUID) (*models.Record, error) {
 	var record models.Record
 	err := s.db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(id[:])
@@ -104,7 +104,7 @@ func (s *Storage) GetRecord(id uuid.UUID) (*models.Record, error) {
 	return &record, err
 }
 
-func (s *Storage) IsRecordExists(id uuid.UUID) (exists bool, err error) {
+func (s *storage) IsRecordExists(id uuid.UUID) (exists bool, err error) {
 	err = s.db.View(func(txn *badger.Txn) error {
 		_, err := txn.Get(id[:])
 		return err
@@ -118,7 +118,7 @@ func (s *Storage) IsRecordExists(id uuid.UUID) (exists bool, err error) {
 	return
 }
 
-func (s *Storage) DeleteRecord(id uuid.UUID) error {
+func (s *storage) DeleteRecord(id uuid.UUID) error {
 	return s.db.Update(func(txn *badger.Txn) error {
 		return txn.Delete(id[:])
 	})
