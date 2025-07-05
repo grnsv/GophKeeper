@@ -160,32 +160,34 @@ func (s *syncService) decryptFetchedRecords(res *api.RecordsGetOKApplicationJSON
 func (s *syncService) pull(serverRecords map[uuid.UUID]*models.Record) error {
 	for _, serverRecord := range serverRecords {
 		localRecord, err := s.storage.GetRecord(serverRecord.ID)
-		if errors.Is(err, interfaces.ErrNotFound) {
-			serverRecord.Status = models.RecordStatusSynced
-			if err := s.storage.SaveRecord(serverRecord); err != nil {
-				return err
-			}
-			continue
-		}
 		if err != nil {
+			if errors.Is(err, interfaces.ErrNotFound) {
+				localRecord = nil
+			} else {
+				return err
+			}
+		}
+		if err = s.syncRecord(localRecord, serverRecord); err != nil {
 			return err
-		}
-		if localRecord.Status != models.RecordStatusSynced {
-			continue
-		}
-		if localRecord.Version > serverRecord.Version {
-			localRecord.Status = models.RecordStatusConflict
-			if err := s.storage.SaveRecord(localRecord); err != nil {
-				return err
-			}
-		} else {
-			serverRecord.Status = models.RecordStatusSynced
-			if err := s.storage.SaveRecord(serverRecord); err != nil {
-				return err
-			}
 		}
 	}
 	return nil
+}
+
+func (s *syncService) syncRecord(localRecord *models.Record, serverRecord *models.Record) error {
+	if localRecord == nil {
+		serverRecord.Status = models.RecordStatusSynced
+		return s.storage.SaveRecord(serverRecord)
+	}
+	if localRecord.Status != models.RecordStatusSynced {
+		return nil
+	}
+	if localRecord.Version > serverRecord.Version {
+		localRecord.Status = models.RecordStatusConflict
+		return s.storage.SaveRecord(localRecord)
+	}
+	serverRecord.Status = models.RecordStatusSynced
+	return s.storage.SaveRecord(serverRecord)
 }
 
 func (s *syncService) push(ctx context.Context, serverRecords map[uuid.UUID]*models.Record) error {
