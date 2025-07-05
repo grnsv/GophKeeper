@@ -77,7 +77,7 @@ User registers with login (any string, no email verification) and master passwor
 
 **Triggers:**
 - Automatically after login/registration.
-- In the background every 10 minutes.
+- In the background every 10 seconds.
 - Manually via the "Sync" option.
 
 **Process:**
@@ -170,7 +170,7 @@ flowchart TD
         n2["Login|Register"]
         n1(["Start"])
         n3(["Sync button"])
-        n4(["Every 10 minutes"])
+        n4(["Every 10 seconds"])
   end
  subgraph s2["Sync"]
         n10(["Start sync"])

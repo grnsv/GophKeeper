@@ -82,10 +82,10 @@ func (s *Service) GetRecords(ctx context.Context, userID string) ([]*models.Reco
 }
 
 func (s *Service) SaveRecord(ctx context.Context, rec *models.Record) error {
-	if rec.Version == 1 {
-		return s.storage.CreateRecord(ctx, rec)
+	if rec.Version > 1 {
+		return s.storage.UpdateRecord(ctx, rec)
 	}
-	return s.storage.UpdateRecord(ctx, rec)
+	return s.storage.UpdateOrCreateRecord(ctx, rec)
 }
 
 func (s *Service) GetRecord(ctx context.Context, userID string, id uuid.UUID) (*models.Record, error) {

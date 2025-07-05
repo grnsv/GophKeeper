@@ -50,16 +50,11 @@ func NewEditMetadata(metadata types.Metadata) tea.Model {
 		m.rows = append(m.rows, row)
 	}
 
-	if len(m.rows) == 0 {
-		m.addEmptyRow()
+	if len(m.rows) > 0 {
+		m.rows[0].KeyInput.Focus()
 	}
 
-	m.rows[0].KeyInput.Focus()
 	return m
-}
-
-func (m *editMetadataModel) addEmptyRow() {
-	m.rows = append(m.rows, newRow())
 }
 
 func (m editMetadataModel) Init() tea.Cmd {
@@ -127,14 +122,14 @@ func (m *editMetadataModel) handleEnter() tea.Cmd {
 
 	if m.focusIndex == addBtnIndex {
 		m.blurCurrentElement()
-		m.addEmptyRow()
+		m.rows = append(m.rows, newRow())
 		m.focusIndex = (len(m.rows) - 1) * 3
 		return m.focusCurrentElement()
 	}
 
 	if m.focusIndex%3 == 2 {
 		rowIndex := m.focusIndex / 3
-		if len(m.rows) > 1 {
+		if len(m.rows) > 0 {
 			m.rows = append(m.rows[:rowIndex], m.rows[rowIndex+1:]...)
 			totalFocusPoints := len(m.rows)*3 + 2
 			if m.focusIndex >= totalFocusPoints {

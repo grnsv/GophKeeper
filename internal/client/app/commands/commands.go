@@ -77,7 +77,7 @@ func Show(svc interfaces.Service) tea.Cmd {
 }
 
 func SyncTick() tea.Cmd {
-	return tea.Tick(10*time.Minute, func(_ time.Time) tea.Msg {
+	return tea.Tick(10*time.Second, func(_ time.Time) tea.Msg {
 		return types.SyncTickMsg{}
 	})
 }
@@ -88,7 +88,7 @@ func TrySync(svc interfaces.Service) tea.Cmd {
 		if msg.Err != nil {
 			return msg
 		}
-		return Sync(svc)
+		return Sync(svc)()
 	}
 }
 

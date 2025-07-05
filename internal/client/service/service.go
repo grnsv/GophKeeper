@@ -182,17 +182,18 @@ func (s *Service) SaveRecord(ctx context.Context, record *models.Record) error {
 }
 
 func (s *Service) syncPendingRecord(ctx context.Context, record *models.Record) error {
-	if err := s.encryptRecord(record); err != nil {
+	encripted := *record
+	if err := s.encryptRecord(&encripted); err != nil {
 		return err
 	}
 	res, err := s.client.RecordsIDPut(ctx, &api.Record{
-		ID:      api.NewOptUUID(record.ID),
-		Type:    api.RecordType(record.Type),
-		Data:    record.Data,
-		Nonce:   record.Nonce,
-		Version: record.Version,
+		ID:      api.NewOptUUID(encripted.ID),
+		Type:    api.RecordType(encripted.Type),
+		Data:    encripted.Data,
+		Nonce:   encripted.Nonce,
+		Version: encripted.Version,
 	}, api.RecordsIDPutParams{
-		ID: record.ID,
+		ID: encripted.ID,
 	})
 	if err != nil {
 		return err
@@ -341,16 +342,18 @@ func (s *Service) syncIn(serverRecords map[uuid.UUID]*models.Record) error {
 		if localRecord.Status != models.RecordStatusSynced {
 			continue
 		}
-		if localRecord.Version-serverRecord.Version > 0 {
+		if localRecord.Version > serverRecord.Version {
 			localRecord.Status = models.RecordStatusConflict
 			err = s.storage.SaveRecord(localRecord)
 			if err != nil {
 				return err
 			}
-		}
-		err = s.storage.SaveRecord(serverRecord)
-		if err != nil {
-			return err
+		} else {
+			serverRecord.Status = models.RecordStatusSynced
+			err = s.storage.SaveRecord(serverRecord)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -372,6 +375,8 @@ func (s *Service) syncOut(ctx context.Context, serverRecords map[uuid.UUID]*mode
 			if !exists {
 				s.DeleteRecord(ctx, localRecord)
 			}
+		default:
+			s.syncPendingRecord(ctx, localRecord)
 		}
 	}
 

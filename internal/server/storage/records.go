@@ -31,6 +31,7 @@ func (r *RecordRepository) initStatements(ctx context.Context) error {
 	queries := map[string]string{
 		"GetRecords":   `SELECT * FROM records WHERE user_id = $1`,
 		"CreateRecord": `INSERT INTO records (id, user_id, type, data, nonce, version) VALUES ($1, $2, $3, $4, $5, $6)`,
+		"ExistsRecord": `SELECT EXISTS (SELECT 1 FROM records WHERE id = $1 AND user_id = $2) as exists`,
 		"GetRecord":    `SELECT * FROM records WHERE id = $1 AND user_id = $2 LIMIT 1`,
 		"DeleteRecord": `DELETE FROM records WHERE id = $1 AND user_id = $2`,
 	}
@@ -91,6 +92,17 @@ func (r *RecordRepository) CreateRecord(ctx context.Context, rec *models.Record)
 		return err
 	}
 	return nil
+}
+
+func (r *RecordRepository) UpdateOrCreateRecord(ctx context.Context, rec *models.Record) error {
+	var exists bool
+	if err := r.stmts["ExistsRecord"].QueryRowContext(ctx, rec.ID, rec.UserID).Scan(&exists); err != nil {
+		return err
+	}
+	if exists {
+		return r.UpdateRecord(ctx, rec)
+	}
+	return r.CreateRecord(ctx, rec)
 }
 
 func (r *RecordRepository) UpdateRecord(ctx context.Context, rec *models.Record) error {

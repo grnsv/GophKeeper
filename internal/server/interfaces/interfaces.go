@@ -47,6 +47,7 @@ type RecordRepository interface {
 	Close() error
 	GetRecords(ctx context.Context, userID string) ([]*models.Record, error)
 	CreateRecord(ctx context.Context, rec *models.Record) error
+	UpdateOrCreateRecord(ctx context.Context, rec *models.Record) error
 	UpdateRecord(ctx context.Context, rec *models.Record) error
 	GetRecord(ctx context.Context, userID string, id uuid.UUID) (*models.Record, error)
 	DeleteRecord(ctx context.Context, userID string, id uuid.UUID) error

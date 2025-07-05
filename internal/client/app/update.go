@@ -64,11 +64,15 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.Err != nil {
 			return m.handleError(msg.Err)
 		}
+		m.connected = true
 		m.authenticated = true
 		return m, tea.Batch(commands.SyncTick(), m.trySync(), commands.BackToMenu)
 
 	case types.SyncTickMsg:
 		return m, tea.Batch(commands.SyncTick(), m.trySync())
+
+	case types.SyncMsg:
+		return m.handleError(msg.Err)
 
 	case types.ErrMsg:
 		return m.handleError(msg.Err)
@@ -76,7 +80,6 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case types.ErrClearedMsg:
 		m.errMsg = ""
 		return m, nil
-
 	}
 
 	newScreen, cmd := m.screen.Update(msg)
@@ -90,7 +93,7 @@ func (m appModel) changeScreen(newScreen tea.Model) (tea.Model, tea.Cmd) {
 	return m, m.screen.Init()
 }
 
-func (m appModel) handleError(err error) (tea.Model, tea.Cmd) {
+func (m appModel) handleError(err error) (appModel, tea.Cmd) {
 	if err == nil {
 		m.connected = true
 		return m, nil
