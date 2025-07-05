@@ -17,6 +17,8 @@ import (
 	"golang.org/x/crypto/argon2"
 )
 
+const maxUniqueIDAttempts = 5
+
 type Service struct {
 	client         *api.Client
 	security       interfaces.SecuritySource
@@ -215,7 +217,7 @@ func (s *Service) syncPendingRecord(ctx context.Context, record *models.Record) 
 }
 
 func (s *Service) newUniqueID() (uuid.UUID, error) {
-	for range 5 {
+	for range maxUniqueIDAttempts {
 		id, err := uuid.NewRandom()
 		if err != nil {
 			return uuid.Nil, err
