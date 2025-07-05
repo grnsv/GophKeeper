@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
 	"github.com/grnsv/GophKeeper/internal/api"
@@ -159,6 +160,13 @@ func (s *syncService) decryptFetchedRecords(res *api.RecordsGetOKApplicationJSON
 func (s *syncService) pull(serverRecords map[uuid.UUID]*models.Record) error {
 	for _, serverRecord := range serverRecords {
 		localRecord, err := s.storage.GetRecord(serverRecord.ID)
+		if errors.Is(err, interfaces.ErrNotFound) {
+			serverRecord.Status = models.RecordStatusSynced
+			if err := s.storage.SaveRecord(serverRecord); err != nil {
+				return err
+			}
+			continue
+		}
 		if err != nil {
 			return err
 		}
@@ -167,14 +175,12 @@ func (s *syncService) pull(serverRecords map[uuid.UUID]*models.Record) error {
 		}
 		if localRecord.Version > serverRecord.Version {
 			localRecord.Status = models.RecordStatusConflict
-			err = s.storage.SaveRecord(localRecord)
-			if err != nil {
+			if err := s.storage.SaveRecord(localRecord); err != nil {
 				return err
 			}
 		} else {
 			serverRecord.Status = models.RecordStatusSynced
-			err = s.storage.SaveRecord(serverRecord)
-			if err != nil {
+			if err := s.storage.SaveRecord(serverRecord); err != nil {
 				return err
 			}
 		}

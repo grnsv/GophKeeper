@@ -99,7 +99,7 @@ func (s *storage) GetRecord(id uuid.UUID) (*models.Record, error) {
 		})
 	})
 	if errors.Is(err, badger.ErrKeyNotFound) {
-		return nil, nil
+		return nil, interfaces.ErrNotFound
 	}
 	return &record, err
 }
