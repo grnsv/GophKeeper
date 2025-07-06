@@ -100,7 +100,8 @@ func TrySync(svc interfaces.Service) tea.Cmd {
 
 func Sync(svc interfaces.Service) tea.Cmd {
 	return func() tea.Msg {
-		return types.SyncMsg{Err: svc.Sync(context.Background())}
+		hasConflicts, err := svc.Sync(context.Background())
+		return types.SyncMsg{HasConflicts: hasConflicts, Err: err}
 	}
 }
 
@@ -128,7 +129,10 @@ func SubmitData[T types.Data](data T) tea.Cmd {
 
 func SaveRecord(svc interfaces.Service, record *models.Record) tea.Cmd {
 	return func() tea.Msg {
-		_, err := svc.PushRecord(context.Background(), record)
+		record, err := svc.PushRecord(context.Background(), record)
+		if err == nil && record.Status == models.RecordStatusConflict {
+			return types.ConflictMsg{HasConflicts: true}
+		}
 		return types.ErrMsg{Err: err}
 	}
 }

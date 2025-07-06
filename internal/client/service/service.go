@@ -88,12 +88,7 @@ func (s *service) PushRecord(ctx context.Context, record *models.Record) (*model
 		return record, err
 	}
 
-	record, err = s.SyncService.PushRecord(ctx, record)
-	if err != nil {
-		return record, err
-	}
-
-	return record, s.Storage.SaveRecord(record)
+	return s.SyncService.PushRecord(ctx, record)
 }
 
 func (s *service) newUniqueID() (uuid.UUID, error) {

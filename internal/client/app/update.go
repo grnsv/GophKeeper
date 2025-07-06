@@ -32,6 +32,10 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.versions.Server = msg.ServerVersion
 		return m.handleError(msg.Err)
 
+	case types.ConflictMsg:
+		m.hasConflicts = msg.HasConflicts
+		return m, nil
+
 	case types.MenuSelectedMsg:
 		switch msg.Item {
 		case "Login":
@@ -79,6 +83,7 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(commands.SyncTick(), m.trySync())
 
 	case types.SyncMsg:
+		m.hasConflicts = msg.HasConflicts
 		return m.handleError(msg.Err)
 
 	case types.ErrMsg:

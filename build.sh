@@ -13,6 +13,7 @@ go generate $PKGS
 go vet $PKGS
 go fmt $PKGS
 go test -race $PKGS
+go tool staticcheck $PKGS
 
 cd cmd/server
 go build -ldflags "\

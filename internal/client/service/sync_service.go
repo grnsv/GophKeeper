@@ -55,7 +55,7 @@ func (s *syncService) PushRecord(ctx context.Context, record *models.Record) (*m
 	default:
 		return record, interfaces.ErrUnexpected
 	}
-	return record, nil
+	return record, s.storage.SaveRecord(record)
 }
 
 func (s *syncService) PullRecord(ctx context.Context, id uuid.UUID) (*models.Record, error) {
@@ -109,19 +109,15 @@ func (s *syncService) ForgetRecord(ctx context.Context, record *models.Record) e
 	}
 }
 
-func (s *syncService) Sync(ctx context.Context) error {
+func (s *syncService) Sync(ctx context.Context) (hasConflicts bool, err error) {
 	serverRecords, err := s.fetchRecords(ctx)
 	if err != nil {
-		return err
+		return
 	}
 	if err = s.pull(serverRecords); err != nil {
-		return err
+		return
 	}
-	if err = s.push(ctx, serverRecords); err != nil {
-		return err
-	}
-
-	return nil
+	return s.push(ctx, serverRecords)
 }
 
 func (s *syncService) fetchRecords(ctx context.Context) (map[uuid.UUID]*models.Record, error) {
@@ -190,26 +186,33 @@ func (s *syncService) syncRecord(localRecord *models.Record, serverRecord *model
 	return s.storage.SaveRecord(serverRecord)
 }
 
-func (s *syncService) push(ctx context.Context, serverRecords map[uuid.UUID]*models.Record) error {
+func (s *syncService) push(ctx context.Context, serverRecords map[uuid.UUID]*models.Record) (hasConflicts bool, err error) {
 	localRecords, err := s.storage.GetRecords()
 	if err != nil {
-		return err
+		return
 	}
 	for _, localRecord := range localRecords {
 		switch localRecord.Status {
 		case models.RecordStatusPending:
-			s.PushRecord(ctx, localRecord)
+			localRecord, err = s.PushRecord(ctx, localRecord)
 		case models.RecordStatusDeleted:
-			s.ForgetRecord(ctx, localRecord)
+			err = s.ForgetRecord(ctx, localRecord)
 		case models.RecordStatusConflict, models.RecordStatusSynced:
 			_, exists := serverRecords[localRecord.ID]
 			if !exists {
-				s.ForgetRecord(ctx, localRecord)
+				err = s.ForgetRecord(ctx, localRecord)
 			}
 		default:
-			s.PushRecord(ctx, localRecord)
+			localRecord, err = s.PushRecord(ctx, localRecord)
+		}
+
+		if err != nil {
+			return
+		}
+		if localRecord.Status == models.RecordStatusConflict {
+			hasConflicts = true
 		}
 	}
 
-	return nil
+	return
 }

@@ -36,7 +36,10 @@ type RecordSelectedMsg struct {
 
 type SyncTickMsg struct{}
 
-type SyncMsg ErrMsg
+type SyncMsg struct {
+	HasConflicts bool
+	Err          error
+}
 
 type DataMsg struct {
 	Data []byte
@@ -44,4 +47,8 @@ type DataMsg struct {
 
 type MetadataMsg struct {
 	Metadata Metadata
+}
+
+type ConflictMsg struct {
+	HasConflicts bool
 }

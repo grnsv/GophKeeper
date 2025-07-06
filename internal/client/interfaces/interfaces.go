@@ -49,7 +49,7 @@ type SyncService interface {
 	PushRecord(ctx context.Context, record *models.Record) (*models.Record, error)
 	PullRecord(ctx context.Context, id uuid.UUID) (*models.Record, error)
 	ForgetRecord(ctx context.Context, record *models.Record) error
-	Sync(ctx context.Context) error
+	Sync(ctx context.Context) (hasConflicts bool, err error)
 }
 
 type NewCryptoStorage func(userID string, encryptionKey []byte) (Storage, error)

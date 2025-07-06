@@ -16,7 +16,7 @@ const (
 
 	TextPrimary = lipgloss.Color("7")
 	TextSubtle  = lipgloss.Color("240")
-	TextMuted   = lipgloss.Color("241")
+	TextMuted   = lipgloss.Color("244")
 
 	ButtonBg = lipgloss.Color("57")
 )
