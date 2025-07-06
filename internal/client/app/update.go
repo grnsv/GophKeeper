@@ -9,6 +9,7 @@ import (
 	"github.com/grnsv/GophKeeper/internal/client/app/commands"
 	"github.com/grnsv/GophKeeper/internal/client/app/screens"
 	"github.com/grnsv/GophKeeper/internal/client/app/types"
+	"github.com/grnsv/GophKeeper/internal/client/models"
 )
 
 var netErr *net.OpError
@@ -24,6 +25,7 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.WindowSizeMsg:
 		m.width = max(80, msg.Width)
+		msg.Width = m.width
 		newScreen, cmd := m.screen.Update(msg)
 		m.screen = newScreen
 		return m, cmd
@@ -58,7 +60,13 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case types.RecordSelectedMsg:
-		screen, err := screens.NewEdit(m.svc, msg.Record)
+		var screen tea.Model
+		var err error
+		if msg.Record.Status == models.RecordStatusConflict {
+			screen, err = screens.NewResolve(m.svc, msg.Record)
+		} else {
+			screen, err = screens.NewEdit(m.svc, msg.Record)
+		}
 		if err != nil {
 			return m, commands.Error(err)
 		}

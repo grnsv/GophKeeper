@@ -6,6 +6,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/google/uuid"
 	"github.com/grnsv/GophKeeper/internal/client/app/types"
 	"github.com/grnsv/GophKeeper/internal/client/interfaces"
 	"github.com/grnsv/GophKeeper/internal/client/models"
@@ -121,7 +122,7 @@ func SubmitData[T types.Data](data T) tea.Cmd {
 	return func() tea.Msg {
 		data, err := json.Marshal(data)
 		if err != nil {
-			return Error(err)
+			return types.ErrMsg{Err: err}
 		}
 		return types.DataMsg{Data: data}
 	}
@@ -140,5 +141,15 @@ func SaveRecord(svc interfaces.Service, record *models.Record) tea.Cmd {
 func DeleteRecord(svc interfaces.Service, record *models.Record) tea.Cmd {
 	return func() tea.Msg {
 		return types.ErrMsg{Err: svc.ForgetRecord(context.Background(), record)}
+	}
+}
+
+func PullRecord(svc interfaces.Service, id uuid.UUID) tea.Cmd {
+	return func() tea.Msg {
+		record, err := svc.PullRecord(context.Background(), id)
+		if err != nil {
+			return types.ErrMsg{Err: err}
+		}
+		return types.RecordPulledMsg{Record: record}
 	}
 }

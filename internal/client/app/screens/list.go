@@ -61,7 +61,6 @@ func (m listModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tea.WindowSizeMsg:
 		m.bodyHeight = styles.CalcBodyHeight(msg.Height)
-		msg.Height = m.bodyHeight
 	}
 
 	return m, nil

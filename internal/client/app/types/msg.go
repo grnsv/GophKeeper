@@ -52,3 +52,7 @@ type MetadataMsg struct {
 type ConflictMsg struct {
 	HasConflicts bool
 }
+
+type RecordPulledMsg struct {
+	Record *models.Record
+}
