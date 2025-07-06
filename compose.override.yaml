@@ -1,0 +1,43 @@
+services:
+  gophkeeper:
+    environment:
+      DATABASE_DSN: 'postgresql://${DB_USERNAME}:${DB_PASSWORD}@db:5432/${DB_DATABASE}?sslmode=disable'
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres:17.5-alpine
+    restart: unless-stopped
+    environment:
+      PGPASSWORD: '${DB_PASSWORD}'
+      POSTGRES_DB: '${DB_DATABASE}'
+      POSTGRES_USER: '${DB_USERNAME}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD}'
+    ports:
+      - '${FORWARD_DB_PORT:-5432}:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ 'CMD', 'pg_isready', '-q', '-d', '${DB_DATABASE}', '-U', '${DB_USERNAME}' ]
+      retries: 3
+      timeout: 5s
+  swagger-editor:
+    image: swaggerapi/swagger-editor
+    ports:
+      - '8081:8080'
+    volumes:
+      - ./internal/api/openapi.yml:/app/openapi.yml
+    environment:
+      SWAGGER_FILE: /app/openapi.yml
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    ports:
+      - '8082:8080'
+    volumes:
+      - ./internal/api/openapi.yml:/app/openapi.yml
+    environment:
+      SWAGGER_JSON: /app/openapi.yml
+
+volumes:
+  db-data:
+    driver: local
