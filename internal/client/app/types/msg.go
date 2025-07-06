@@ -30,6 +30,10 @@ type RecordsMsg struct {
 	Err     error
 }
 
+type RecordSelectedMsg struct {
+	Record *models.Record
+}
+
 type SyncTickMsg struct{}
 
 type SyncMsg ErrMsg

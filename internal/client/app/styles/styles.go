@@ -46,6 +46,13 @@ var (
 
 	ButtonStyle        = lipgloss.NewStyle().Background(ButtonBg).Foreground(TextPrimary).Padding(0, 1)
 	FocusedButtonStyle = ButtonStyle.Background(Accent)
+
+	StatusStyle        = NoStyle.Width(8)
+	StatusSyncedStyle  = StatusStyle.Foreground(TextPrimary)
+	StatusPendingStyle = StatusStyle.Foreground(TextSubtle)
+	StatusErrorStyle   = StatusStyle.Foreground(Error)
+	StatusDeletedStyle = StatusStyle.Foreground(TextMuted)
+	TypeStyle          = NoStyle.Width(11)
 )
 
 func CalcBodyHeight(height int) int {

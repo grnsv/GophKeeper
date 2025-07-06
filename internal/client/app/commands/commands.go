@@ -76,6 +76,12 @@ func Show(svc interfaces.Service) tea.Cmd {
 	}
 }
 
+func SelectRecord(record *models.Record) tea.Cmd {
+	return func() tea.Msg {
+		return types.RecordSelectedMsg{Record: record}
+	}
+}
+
 func SyncTick() tea.Cmd {
 	return tea.Tick(10*time.Second, func(_ time.Time) tea.Msg {
 		return types.SyncTickMsg{}

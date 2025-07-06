@@ -40,8 +40,8 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.changeScreen(screens.NewAuth(m.svc, screens.AuthModeRegister))
 		case "About":
 			return m.changeScreen(screens.NewAbout(m.versions))
-		// case "Show":
-		// 	m.screen = screens.NewList(m.svc)
+		case "Show":
+			return m.changeScreen(screens.NewList(m.svc))
 		case "Add":
 			screen, err := screens.NewEdit(m.svc, nil)
 			if err != nil {
@@ -52,6 +52,13 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Batch(m.trySync(), commands.BackToMenu)
 		}
 		return m, nil
+
+	case types.RecordSelectedMsg:
+		screen, err := screens.NewEdit(m.svc, msg.Record)
+		if err != nil {
+			return m, commands.Error(err)
+		}
+		return m.changeScreen(screen)
 
 	case types.BackToMenuMsg:
 		mode := screens.MenuGuest
